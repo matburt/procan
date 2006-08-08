@@ -1,0 +1,127 @@
+ProcAn: An Adaptive Process Analysis tool for FreeBSD, OpenBSD, and Linux.
+
+(For a detailed description see its project page on http://matburt.homeunix.com)
+
+Build instructions:
+There are no external dependancies save the standard C libraries so if you run 
+one of the three operating systems listed above you should be okay.  The exception
+to this is that most linux distros don't install libproc's header files.  So you'll
+need to find and install the procps-dev or libproc-dev packages.  Or download an RPM
+of procan for your platform.
+If you are using FreeBSD you can just type: make
+if you would like to build for OpenBSD type: make openbsd  
+likewise if you are building for Linux type: make linux
+
+Usage instructions:
+Running procan with no options will print out some very brief usage information,
+but here I'll provide more detail.
+Currently there are two primary modes: interactive mode (-i) and daemon mode 
+(-d).
+
+*Interactive Mode:
+While running procan in interactive mode it will not detach from the shell, 
+there are three commands that can be issued in interactive mode: 
+p -> By pushing p you will get a list of all of the processes that are 
+currently being tracked by procan. 
+s -> By pushing s you will get the top 5 most interesting processes 
+currently being tracked and the top 5 most interesting users.
+(There will be fewer if there are fewer than 5 interesting processes or users).  
+q -> By pushing q procan will shutdown its threads and quit.  While 
+using procan in interactive mode all backends (more on that in a minute) will 
+still be active the only difference is procan will not detatch from the shell 
+and will not respond to SIGTERM, but it will respond to SIGHUP (Re-read the 
+configuration file).
+
+*Daemon Mode:
+Daemon mode will cause procan to detach from the shell and continue running in 
+the background.  Running procan in the background without using any of the 
+supported backends is rather pointless as you will not be notified of interesting
+processes in any way.  You can shutdown procan by issuing a SIGTERM on the 
+process.  SIGHUP will cause it to re-read its configuration file.
+
+*The configuration file
+procan requires a configuration file, there is a sample config file provided 
+with the program that you should rename from procan.conf.sample -> procan.conf.  
+The following is the directory order that procan will search looking for a config 
+file:  /etc/, /usr/etc/, /usr/local/etc/, /usr/local/etc/procan/, ./  If it can 
+not find the config file it will quit.  You should open this and read through it 
+setting the options that you need, it's very simple and each configuration option 
+has a description and example.
+
+*Backends
+procan supports three backends: mail, script, syslog and can use any combination
+of these three, including all three if that is what you want.  Backends work in both 
+interactive and daemon mode.
++mail backend:  The mail backend will send a digest of the top 5 most 
+interesting processes to the user provided in the configuration file, it will use the 
+MTA also provided in the configuration file. Which defaults to /usr/sbin/sendmail
++script backend: The script backend will trigger a user-defined script action 
+based on an Alarm and/or Warn event whose tolerance can be configured in the 
+configuration file.  The numbers correspond to how interesting a process is in a 
+one-hour period. For instance, heavy firefox usage will frequently trigger a 
+WARN event and will some times trigger an ALARM event on the default settings.
+You can define your own scripts in the configuration file.  procan will pass 4 
+arguments to this script: 1) The PID of the process 2) The name of the process 3)
+The "Score" of the process (More on this in a minute) 4) The number of times in
+one hour that it was interesting
++syslog backend: The syslog backend works the same way the mail backend works bu
+t will send the top 5 most interesting processes to syslog via LOG_NOTICE, note 
+that syslog strips newlines from log messages.
+
+Other Information and FAQs:
+
+"What is the 'Score' and how does it differ from how 'interesting' a process is?
+The Score of a process is used as a long term benchmark by which you can measure
+ a process.  For instance, many times you'll see scores with negative numbers.  
+Whenever a process allocates memory or starts using more processor time, it's 
+score goes up.  When it is freeing memory its score will go down. When it is no 
+longer using very much processor time any points it was given while it was using 
+processor time will be repealed.  You can use this to look at a process in the 
+long term based on when a process was started.  If you start using procan and 
+then several hours later you see that firefox has a score of -12 then you'll 
+know that since procan was started firefox has freed more resources than it has 
+used.  Likewise if you see a process with a very high score then that process 
+is constantly consuming more resources and this might be indicative of a memory 
+leak or a race condition.
+
+"I'm running (Gnome/KDE/Other Applications that make heavy use of resources) and
+it is triggering a lot of warnings and alarms, what gives?"
+After running a lot of tests on my main window manager (Window Maker) I got used
+to not seeing a lot of interesting processes
+except the ones I was using frequently (emacs, gcc, gaim, firefox, etc) but if 
+you are using Gnome/KDE you will see their programs and daemons show up a lot.  
+Why is this? you ask.  It's simple.  These window managers have been very poorly 
+written, as evident by how often they show up in procan.  Gnome is the absolute 
+worst, especially older version. It is constantly allocating memory for no 
+apparent reason, and at very random times seldom in response to any user event.  
+KDE is a little different and slightly more effecient but it tends to allocate 
+memory in very large chunks (seemingly preparing for the user).  If you do not 
+want these processes to be tracked by procan you can put them in the ignore list
+in the configuration file and they will be ignored.  I strongly recommend you do 
+this with some Gnome and KDE background processes, and also such things as 
+xscreensaver and any very graphical games.
+
+"On Linux I see that procan is almost never idle, always running at at least 1% 
+to 5%, why?"
+On Linux procan uses libproc which is based on procfs.  Procfs is a horrible way
+to do fast reading of the process table.  Linux has no way (that I'm aware of) 
+to get process information from the kernel, if you'll look in the sysctl headers 
+you will see that there once was or there is a plan to add them but they just 
+aren't there.  In my opinion this is rather silly.  I think that procfs has some 
+valid uses but in most cases it seems it is more the product of laziness than 
+any attempt at effeciency.  FreeBSD and OpenBSD both have sysctl interfaces to
+the process tree.
+
+"I've found a bug or something that I think is a bug, what should I do?"
+Please email me, and include any important information, like a backtrace or some
+description of the behavior that caused the bug. I really appreciate any and all 
+bug reports and I am willing to work very hard to make this an extremely 
+versatile tool.
+
+"I think you should have done X differently. I would like X feature."
+I will take any feature request and consider it, but I perfer only constructive 
+feedback and feature requests.  I will also consider any patch or addition that 
+you might feel inclined to send me... I don't mind this being a community projec
+t and will do anything to make this a better, more useable tool.  I do not like 
+being flamed when it comes to matters of opinion or because someone has a big eg
+o.  Please check your ego at the door, as I would extend you the same courtesy.
