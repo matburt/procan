@@ -1,7 +1,7 @@
 /*
  * procan  1.0 12/21/2005
  * An intelligent user process analysis tool for FreeBSD, OpenBSD, or Linux
- * Written by:  Matthew W. Jones <matburt@oss-institute.org>
+ * Written by:  Matthew W. Jones <mat@matburt.net>
  */
 
 #include <stdio.h>
