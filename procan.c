@@ -162,6 +162,7 @@ int pipe_mode()
   signal(SIGCHLD, SIG_IGN);
   signal(SIGHUP, handle_sig);
   signal(SIGTERM, handle_sig);
+  signal(SIGUSR1, handle_sig);
 
   pthread_mutex_init(&procsnap_mutex,NULL);
   pthread_mutex_init(&procchart_mutex,NULL);
@@ -225,6 +226,7 @@ int interactive_mode()
   signal(SIGCHLD, SIG_IGN);
   signal(SIGHUP, handle_sig);
   signal(SIGTERM, handle_sig);
+  signal(SIGUSR1, handle_sig);
 
   pthread_mutex_init(&procsnap_mutex,NULL);
   pthread_mutex_init(&procchart_mutex,NULL);
@@ -326,6 +328,28 @@ void perform_housekeeping()
   pthread_mutex_unlock(&procchart_mutex);
 }
 
+/* Reset statistics and collections */
+void reset_statistics()
+{
+  int i;
+  pthread_mutex_lock(&procchart_mutex);
+  for (i = 0; i < numprocavs; i++)
+    {
+      procavs[i].hourly_intrests = 0;
+      procavs[i].mwarned = 0;
+      procavs[i].malarmed = 0;
+      procavs[i].swarned = 0;
+      procavs[i].salarmed = 0;
+      procavs[i].dwarned = 0;
+      procavs[i].dalarmed = 0;
+      procavs[i].intrest_score = 0;
+      procavs[i].num_intrests = 0;
+      procavs[i].mintrests = 0;
+      procavs[i].pintrests = 0;
+    }
+  pthread_mutex_unlock(&procchart_mutex);
+}
+
 int should_ignore_proc(char *name)
 {
   int i;
@@ -372,6 +396,7 @@ int daemon_mode()
   signal(SIGCHLD, SIG_IGN);
   signal(SIGHUP, handle_sig);
   signal(SIGTERM, handle_sig);
+  signal(SIGUSR1, handle_sig);
 
   pthread_mutex_init(&procsnap_mutex,NULL);
   pthread_mutex_init(&procchart_mutex,NULL);
@@ -447,6 +472,10 @@ void handle_sig(int sig)
       pthread_mutex_lock(&hangup_mutex);
       m_hangup=1;
       pthread_mutex_unlock(&hangup_mutex);
+      break;
+    case SIGUSR1:
+      printf("Resetting statistics\n");
+      reset_statistics();
       break;
     }
 }

@@ -108,6 +108,9 @@ char* get_statistics(void);
 /* Perform hourly housekeeping */
 void perform_housekeeping(void);
 
+/* Reset all proc averages */
+void reset_statistics(void);
+
 /* Used to determine if a process is in our ignore list */
 int should_ignore_proc(char *name);
 
