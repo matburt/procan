@@ -1,0 +1,362 @@
+/* ProcAn backends */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <fcntl.h>
+#include <syslog.h>
+#include <stdarg.h>
+#include <sys/time.h>
+#include <sys/param.h>
+#include <pthread.h>
+#include <unistd.h>
+#include "procan.h"
+#include "backend.h"
+
+#if defined (linux)
+#define MAXLOGNAME L_cuserid
+#endif
+
+/* Syslog backend, LOG_NOTICE might bother some people
+ * but it is easier than teaching people how to use syslog
+ * in the future I would like to add more syslog configuration
+ * to the procan config
+ */
+int syslog_backend(procan_config *pc, struct timeval *schedtime)
+{
+  int i;
+  if (schedtime->tv_sec == 0)
+    {
+      if (pc->logfrequency == 0)
+	return BACKEND_ERROR;
+      gettimeofday(schedtime, NULL);
+      schedtime->tv_sec = schedtime->tv_sec + ((pc->logfrequency * 60) * 60);
+      return BACKEND_NORMAL;
+    }
+
+  struct timeval *nowtime = (struct timeval *)malloc(sizeof(struct timeval));
+  gettimeofday(nowtime,NULL);
+  if (nowtime->tv_sec >= schedtime->tv_sec)
+    {
+      printf("Logging to syslog.\n");
+      schedtime->tv_sec = nowtime->tv_sec + ((pc->logfrequency * 60) * 60);
+      openlog("procan", LOG_CONS, LOG_DAEMON);
+      char *info = get_statistics();
+      syslog(LOG_NOTICE, "Interesting Processes: %s", info);
+      //free(info); /* Seems to cause corrupted redzone */
+      closelog();
+    }
+
+  pthread_mutex_lock(&procchart_mutex);
+  int *inds = (int *)calloc(numprocavs, sizeof(int));
+  int n = get_warns(inds, pc, SYSLOG_BACKEND);
+  if (n > 0)
+    openlog("procan", LOG_CONS, LOG_DAEMON);
+  for (i = 0; i < n; i++)
+    {
+      if (!procavs[inds[i]].dwarned)
+	{
+	  syslog(LOG_NOTICE, "WARNING: %s has triggered a warning for being too interesting (%d)",
+		 procavs[inds[i]].command, procavs[inds[i]].hourly_intrests);
+	  procavs[inds[i]].dwarned = 1;
+	}
+    }
+  if (n > 0)
+    closelog();
+  n = get_alarms(inds, pc, SYSLOG_BACKEND);
+  if (n > 0)
+    openlog("procan", LOG_CONS, LOG_DAEMON);
+  for (i = 0; i < n; i++)
+    {
+      if (!procavs[inds[i]].dalarmed)
+	{
+	  syslog(LOG_ALERT, "ALERT: %s has triggered an alarm for being too interesting (%d)",
+		 procavs[inds[i]].command, procavs[inds[i]].hourly_intrests);
+	  procavs[inds[i]].dalarmed = 1;
+	}
+    }
+  if (n > 0)
+    closelog();
+  pthread_mutex_unlock(&procchart_mutex);
+  free(inds);
+  free(nowtime);
+  return BACKEND_NORMAL;
+}
+
+/* The mail backend, works in a very similar way to syslog
+ * but uses popen to open a pipe to the user supplied MTA
+ * "mtapath" in the configuration file
+ */
+int mail_backend(procan_config *pc, struct timeval *schedtime)
+{
+  int i;
+  FILE *mailpipe;
+
+  if (schedtime->tv_sec == 0)
+    {
+      if (pc->mailfrequency == 0 || strcmp(pc->adminemail, "") == 0)
+	return BACKEND_ERROR;
+      gettimeofday(schedtime, NULL);
+      schedtime->tv_sec = schedtime->tv_sec + ((pc->mailfrequency * 60) * 60);
+      return BACKEND_NORMAL;
+    }
+  struct timeval *nowtime = (struct timeval *)malloc(sizeof(struct timeval));
+  gettimeofday(nowtime, NULL);
+  if (nowtime->tv_sec >= schedtime->tv_sec)
+    {
+      printf("Logging via mail.\n");
+      schedtime->tv_sec = nowtime->tv_sec + ((pc->mailfrequency * 60) * 60);
+      char *mta = (char *)malloc(50*sizeof(char));
+      snprintf(mta,50,"%s -t %s", pc->mtapath, pc->adminemail);
+      if ((mailpipe = popen(mta, "w")) == NULL)
+	{
+	  printf("Could not send mail with mail backend.\n");
+	  free(nowtime);
+	  free(mta);
+	  return BACKEND_ERROR;
+	}
+      else
+	{
+	  char *uname = (char *)malloc(MAXLOGNAME*sizeof(char));
+	  getlogin_r(uname, MAXLOGNAME);
+	  fprintf(mailpipe, "From: %s\n", uname);
+	  fprintf(mailpipe, "Subject: Procan Status Report\n");
+	  char *info = get_statistics();
+	  fprintf(mailpipe, "%s", info);
+	  pclose(mailpipe);
+	  free(uname);
+	  free(info);
+	}
+      free(mta);
+    }
+
+  pthread_mutex_lock(&procchart_mutex);
+  char *mta = (char *)malloc(50*sizeof(char));
+  snprintf(mta,50,"%s -t %s", pc->mtapath, pc->adminemail);
+  int *inds = (int *)calloc(numprocavs, sizeof(int));
+  int n = get_warns(inds, pc, MAIL_BACKEND);
+  if (n > 0)
+    {
+      if ((mailpipe = popen(mta,"w")) == NULL)
+	{
+	  printf("Could not send mail with mail backend.\n");
+	  free(nowtime);
+	  free(mta);
+	  free(inds);
+	  pthread_mutex_unlock(&procchart_mutex);
+	  return BACKEND_ERROR;
+	}
+    }
+  for (i = 0; i < n; i++)
+    {
+      if (!procavs[inds[i]].mwarned)
+	{
+	  char *uname = (char *)malloc(MAXLOGNAME*sizeof(char));
+	  getlogin_r(uname, MAXLOGNAME);
+	  fprintf(mailpipe, "From: %s\n", uname);
+	  fprintf(mailpipe, "Subject: Procan Warning\n");
+	  fprintf(mailpipe, "%s has been warned by ProcAn (%d)", 
+		  procavs[inds[i]].command, procavs[inds[i]].hourly_intrests);
+	  free(uname);
+	  procavs[inds[i]].mwarned = 1;
+	}
+    }
+  if (n > 0)
+    pclose(mailpipe);
+  n = get_alarms(inds, pc, MAIL_BACKEND);
+  if (n > 0)
+    {
+      if ((mailpipe = popen(mta,"w")) == NULL)
+	{
+	  printf("Could not send mail with mail backend.\n");
+	  free(nowtime);
+	  free(mta);
+	  free(inds);
+	  pthread_mutex_unlock(&procchart_mutex);
+	  return BACKEND_ERROR;
+	}
+    }
+  for (i = 0; i < n; i++)
+    {
+      if (!procavs[inds[i]].malarmed)
+	{
+	  char *uname = (char *)malloc(MAXLOGNAME*sizeof(char));
+	  getlogin_r(uname, MAXLOGNAME);
+	  fprintf(mailpipe, "From: %s\n", uname);
+	  fprintf(mailpipe, "To: %s\n", pc->adminemail);
+	  fprintf(mailpipe, "Subject: Procan Alarm\n");
+	  fprintf(mailpipe, "%s has triggered an alarm condition (%d)", 
+		  procavs[inds[i]].command, procavs[inds[i]].hourly_intrests);
+	  free(uname);
+	  procavs[inds[i]].malarmed = 1;
+	}
+    }
+  if (n > 0)
+    pclose(mailpipe);
+  pthread_mutex_unlock(&procchart_mutex);
+		     
+  free(inds);
+  free(mta);
+  free(nowtime);
+  return BACKEND_NORMAL;
+}
+
+/* Script backend */
+int script_backend(procan_config *pc)
+{
+  int *inds = (int *)calloc(numprocavs, sizeof(int));
+  pthread_mutex_lock(&procchart_mutex);
+  int n = get_warns(inds, pc, SCRIPT_BACKEND);
+  int i;
+  if (n > 0)
+    {
+      if (strcmp(pc->warnscript, "") == 0)
+	{
+	  free(inds);
+	  pthread_mutex_unlock(&procchart_mutex);
+	  return BACKEND_ERROR;
+	}
+    }
+  for (i = 0; i < n; i++)
+    {
+      pid_t cp = fork();
+      if (cp >= 0)
+	{
+	  if (cp == 0)
+	    {
+	      char *sargs = malloc(100*sizeof(char));
+	      snprintf(sargs, 100*sizeof(char), "%s %d %s %d %d",
+		       pc->warnscript,
+		       procavs[inds[i]].lastpid,
+		       procavs[inds[i]].command,
+		       procavs[inds[i]].intrest_score,
+		       procavs[inds[i]].hourly_intrests);
+	      system(sargs);
+	      free(sargs);
+	      _exit(1);
+	    }
+	  else
+	    {
+	      procavs[inds[i]].swarned = 1;
+	      continue;
+	    }
+	}
+      else
+	{
+	  free(inds);
+	  pthread_mutex_unlock(&procchart_mutex);
+	  return BACKEND_ERROR;
+	}
+    }
+  n = get_alarms(inds, pc, SCRIPT_BACKEND);
+  if (n > 0)
+    {
+      if (strcmp(pc->alarmscript, "") == 0)
+	{
+	  free(inds);
+	  pthread_mutex_unlock(&procchart_mutex);
+	  return BACKEND_ERROR;
+	}
+    }
+  for (i = 0; i < n; i++)
+    {
+      pid_t cp = fork();
+      if (cp >= 0)
+	{
+	  if (cp == 0)
+	    {
+	      char *sargs = malloc(100*sizeof(char));
+	      snprintf(sargs, 100*sizeof(char), "%s %d %s %d %d",
+		       pc->alarmscript,
+		       procavs[inds[i]].lastpid,
+		       procavs[inds[i]].command,
+		       procavs[inds[i]].intrest_score,
+		       procavs[inds[i]].hourly_intrests);
+	      system(sargs);
+	      free(sargs);
+	      _exit(1);
+	    }
+	  else
+	    {
+	      procavs[inds[i]].salarmed = 1;
+	      continue;
+	    }
+	}
+    }
+  free(inds);
+  pthread_mutex_unlock(&procchart_mutex);
+  return BACKEND_NORMAL;
+}
+
+/* Get a list of procavs indices that match our 'warn' condition
+ * returns the number of warns that will be present in *indcs
+ * caller should handle mutexes and malloc
+ */
+int get_warns(int *indcs, procan_config *pc, int backendtype)
+{
+  int nwarns = 0;
+  int i;
+  for (i = 0; i < numprocavs; i++)
+    {
+      if (procavs[i].hourly_intrests > pc->warnlevel)
+	{
+	  switch (backendtype)
+	    {
+	    case MAIL_BACKEND:
+	      if (procavs[i].mwarned)
+		continue;
+	      break;
+	    case SYSLOG_BACKEND:
+	      if (procavs[i].dwarned)
+		continue;
+	      break;
+	    case SCRIPT_BACKEND:
+	      if (procavs[i].swarned)
+		continue;
+	      break;
+	    default:
+	      return BACKEND_ERROR;
+	      break;  /* Not necessary, but a good habit */
+	    }
+	  indcs[nwarns] = i;
+	  nwarns++;
+	}
+    }
+  return nwarns;
+}
+
+/* Get a list of procavs indices that match our 'alarm' condition
+ * returns the number of alarms that will be present in *indcs
+ * caller should handle mutexes and malloc
+ */
+int get_alarms(int *indcs, procan_config *pc, int backendtype)
+{
+  int nalarms = 0;
+  int i;
+  for (i = 0; i < numprocavs; i++)
+    {
+      if (procavs[i].hourly_intrests > pc->alarmlevel)
+	{
+	  switch (backendtype)
+	    {
+	    case MAIL_BACKEND:
+	      if (procavs[i].malarmed)
+		continue;
+	      break;
+	    case SYSLOG_BACKEND:
+	      if (procavs[i].dalarmed)
+		continue;
+	      break;
+	    case SCRIPT_BACKEND:
+	      if (procavs[i].salarmed)
+		continue;
+	      break;
+	    default:
+	      return BACKEND_ERROR;
+	      break;  /* Not necessary, but a good habit */
+	    }
+	  indcs[nalarms] = i;
+	  nalarms++;
+	}
+    }
+  return nalarms;
+}
