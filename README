@@ -1,13 +1,11 @@
 ProcAn: An Adaptive Process Analysis tool for FreeBSD, OpenBSD, and Linux.
 
-(For a detailed description see its project page on http://matburt.homeunix.com)
+(For a detailed description see its project page on http://www.matburt.net)
 
 Build instructions:
-There are no external dependancies save the standard C libraries so if you run 
-one of the three operating systems listed above you should be okay.  The exception
-to this is that most linux distros don't install libproc's header files.  So you'll
-need to find and install the procps-dev or libproc-dev packages.  Or download an RPM
-of procan for your platform.
+There are no external dependencies for FreeBSD and OpenBSDsave the standard C libraries.
+On Linux you will need libproc's header files, these can usually be found as a package
+for your distro, sometimes it is grouped in with procps-devel.
 If you are using FreeBSD you can just type: make
 if you would like to build for OpenBSD type: make openbsd  
 likewise if you are building for Linux type: make linux
@@ -15,8 +13,8 @@ likewise if you are building for Linux type: make linux
 Usage instructions:
 Running procan with no options will print out some very brief usage information,
 but here I'll provide more detail.
-Currently there are two primary modes: interactive mode (-i) and daemon mode 
-(-d).
+Currently there are three primary modes: interactive mode (-i), daemon mode 
+(-d), and pipe mode (-p).
 
 *Interactive Mode:
 While running procan in interactive mode it will not detach from the shell, 
@@ -30,14 +28,25 @@ q -> By pushing q procan will shutdown its threads and quit.  While
 using procan in interactive mode all backends (more on that in a minute) will 
 still be active the only difference is procan will not detatch from the shell 
 and will not respond to SIGTERM, but it will respond to SIGHUP (Re-read the 
-configuration file).
+configuration file) and SIGUSR1 (Reset statistics).
 
 *Daemon Mode:
 Daemon mode will cause procan to detach from the shell and continue running in 
 the background.  Running procan in the background without using any of the 
 supported backends is rather pointless as you will not be notified of interesting
 processes in any way.  You can shutdown procan by issuing a SIGTERM on the 
-process.  SIGHUP will cause it to re-read its configuration file.
+process.  SIGHUP will cause it to re-read its configuration file.  SIGUSR1 resets
+the statistics.
+
+*Pipe Mode:
+Pipe Mode does not detatch from the shell, it is meant to have its output piped
+to another program.  The format looks like this: [rss,procan,24927,+1,2,0]
+The first parameter is what has changed most recently, the second is the process name,
+the third is the pid, the fourth is the score modifier, the fifth is the overall score,
+and the sixth is the interest level.  There are two preliminary plugins in the ./plugins
+directory of the source tree to demonstrate the pipe mode but it should be noted that
+they don't work very well yet.   To run the gnuplot plugin you will need the python
+gnuplot libraries and you could run it like this:  procan -p | ./plugins/gnuplot-plugin.py
 
 *The configuration file
 procan requires a configuration file, there is a sample config file provided 
