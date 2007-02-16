@@ -102,10 +102,10 @@ After running a lot of tests on my main window manager (Window Maker) I got used
 to not seeing a lot of interesting processes
 except the ones I was using frequently (emacs, gcc, gaim, firefox, etc) but if 
 you are using Gnome/KDE you will see their programs and daemons show up a lot.  
-Why is this? you ask.  It's simple.  These window managers have been very poorly 
-written, as evident by how often they show up in procan.  Gnome is the absolute 
-worst, especially older version. It is constantly allocating memory for no 
-apparent reason, and at very random times seldom in response to any user event.  
+Why is this? you ask.  It's simple.  These window managers have very strange 
+resource usage patterns, which is evident by how often they show up in procan.  
+Gnome is the absolute worst, especially older versions. It is constantly allocating 
+memory for no apparent reason, and at very random times seldom in response to any user event.  
 KDE is a little different and slightly more effecient but it tends to allocate 
 memory in very large chunks (seemingly preparing for the user).  If you do not 
 want these processes to be tracked by procan you can put them in the ignore list
