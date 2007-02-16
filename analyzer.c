@@ -96,7 +96,7 @@ void* analyzer_thread(void *a)
 		k = 1;
 	      if (procavs[uuslot].command == NULL)   /* Create an entry for it */
 		procavs[uuslot].command = calloc(25, sizeof(char));
-	      strncpy(procavs[uuslot].command, procsnap[i]._command, 100);
+	      strncpy(procavs[uuslot].command, procsnap[i]._command, 25);
 	      procavs[uuslot].lastpid = procsnap[i]._pid;
 	      procavs[uuslot].uid = procsnap[i]._uid;
 	      gettimeofday(_t, NULL);
