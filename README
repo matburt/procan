@@ -64,6 +64,8 @@ interactive and daemon mode.
 +mail backend:  The mail backend will send a digest of the top 5 most 
 interesting processes to the user provided in the configuration file, it will use the 
 MTA also provided in the configuration file. Which defaults to /usr/sbin/sendmail
+In the event of a process being in the Warned or Alarm state an email will be sent to
+the administrator
 +script backend: The script backend will trigger a user-defined script action 
 based on an Alarm and/or Warn event whose tolerance can be configured in the 
 configuration file.  The numbers correspond to how interesting a process is in a 
@@ -75,7 +77,8 @@ The "Score" of the process (More on this in a minute) 4) The number of times in
 one hour that it was interesting
 +syslog backend: The syslog backend works the same way the mail backend works bu
 t will send the top 5 most interesting processes to syslog via LOG_NOTICE, note 
-that syslog strips newlines from log messages.
+that syslog strips newlines from log messages.  Syslog will also be notified of
+processes that are flagged in the WARN or ALARM state.
 
 Other Information and FAQs:
 
