@@ -1,5 +1,5 @@
 # ProcAn Example Configuration file
-# Matthew W. Jones <matburt@oss-institute.org>
+# Matthew W. Jones <mat@matburt.net>
 # 
 # Rename this file to procan.conf
 # and put it in either: /etc /usr/etc /usr/local/etc /usr/local/etc/procan

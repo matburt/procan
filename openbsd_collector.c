@@ -71,7 +71,8 @@ void* collector_thread(void *a)
 	{ /* For each running process we do this and drop it into the array. */
 	  procsnap[i]._pid = kpptr->p_pid;
 	  procsnap[i]._pid = kpptr->p_uid;
-	  procsnap[i]._command = kpptr->p_comm;
+	  procsnap[i]._command = calloc(KI_MAXCOMLEN, sizeof(char));
+	  strlcpy(procsnap[i]._command, kpptr->p_comm, KI_MAXCOMLEN);
 	  procsnap[i]._rssize = kpptr->p_vm_rssize;
 	  procsnap[i]._size = kpptr->p_uru_ixrss;
 	  procsnap[i]._perc = kpptr->p_pctcpu;
