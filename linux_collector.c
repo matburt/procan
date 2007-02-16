@@ -9,7 +9,6 @@
 #include <sys/stat.h>
 #include <pthread.h>
 #include <ctype.h>
-#include <proc/readproc.h>
 #include "procan.h"
 #include "linux_collector.h"
 
@@ -49,8 +48,7 @@ void* collector_thread(void *a)
 	  procsnap[numprocsnap]._perc = proc_info->pcpu;
 	  procsnap[numprocsnap]._age = 0;
 	  procsnap[numprocsnap]._read = 0;
-	  //freeproc(proc_info);
-	  free(proc_info);
+	  freep(proc_info);
 	  numprocsnap++;
 	}
       closeproc(proct);
@@ -64,4 +62,21 @@ void* collector_thread(void *a)
     }
   printf("Collector Thread Exiting\n");
   return NULL;
+}
+
+/* This method will free a linux proc_t entry
+ * this method is here because libproc's freeprocs
+ * method does not always seem to be available
+ */
+void freep(proc_t* p)
+{
+  if (!p)     /* in case p is NULL */
+    return;
+  /* ptrs are after strings to avoid copying memory when building them. */
+  /* so free is called on the address of the address of strvec[0]. */
+  if (p->cmdline)
+    free((void*)*p->cmdline);
+  if (p->environ)
+    free((void*)*p->environ);
+  free(p);
 }
