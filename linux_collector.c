@@ -49,7 +49,8 @@ void* collector_thread(void *a)
 	  procsnap[numprocsnap]._perc = proc_info->pcpu;
 	  procsnap[numprocsnap]._age = 0;
 	  procsnap[numprocsnap]._read = 0;
-	  freeproc(proc_info);
+	  //freeproc(proc_info);
+	  free(proc_info);
 	  numprocsnap++;
 	}
       closeproc(proct);
