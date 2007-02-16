@@ -451,7 +451,7 @@ void usage()
   printf("  p: list processes being tracked\n");
   printf("  s: Show the top 5 most interesting processes and users\n");
   printf("  q: Quit\n\n");
-  printf("Author: Matthew W. Jones <matburt@oss-institute.org>\n");
+  printf("Author: Matthew W. Jones <mat@matburt.net>\n");
   printf("http://matburt.homeunix.com/projects/procan\n");
 }
 
