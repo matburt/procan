@@ -30,6 +30,18 @@ extern int *bes;
 
 extern int scriptoutput;
 
+/* Write script stdout in pipe mode */
+void script_output(char *type, char *cmd, int lastpid, int movement, int score, int niterests)
+{
+  if (movement >= 0)
+    fprintf(stdout, "[%s,%s,%i,+%i,%i,%i]\n", type, 
+	    cmd,lastpid,movement,score,niterests);
+  else
+    fprintf(stdout, "[%s,%s,%i,%i,%i,%i]\n", type,
+	    cmd,lastpid,movement,score,niterests);
+  fflush(stdout);
+}
+
 /* Will analyze process data gathered by the collector
  * looking for 'interesting' processes and apply an adaptive threshold
  * to analyze the level of interest.
@@ -123,7 +135,7 @@ void* analyzer_thread(void *a)
 	      procavs[uuslot].malarmed = 0;
 	      procavs[uuslot].swarned = 0;
 	      procavs[uuslot].salarmed = 0;
-	      if (k == 0) 
+	      if (k == 0 && numprocavs <= MAXPROCAVS) 
 		numprocavs++;
 	    }
 	  else   /* This means we found the history, now we begin the analysis */
@@ -140,13 +152,10 @@ void* analyzer_thread(void *a)
 		{
 		  procavs[foundhistory].intrest_score = procavs[foundhistory].intrest_score + 5;
 		  if (scriptoutput)
-		    {
-		      fprintf(stdout, "[proc,%s,%i,+5,%i,%i]\n", procavs[foundhistory].command,
-			     procavs[foundhistory].lastpid,
-			     procavs[foundhistory].intrest_score,
-			     procavs[foundhistory].num_intrests);
-		      fflush(stdout);
-		    }
+		    script_output("proc", procavs[foundhistory].command,
+				  procavs[foundhistory].lastpid,
+				  5, procavs[foundhistory].intrest_score,
+				  procavs[foundhistory].num_intrests);
 		  procavs[foundhistory].pintrests++;
 		  procavs[foundhistory].mov_percent = 0;
 		}
@@ -158,25 +167,19 @@ void* analyzer_thread(void *a)
 		  procavs[foundhistory].intrest_score = procavs[foundhistory].intrest_score + 1;
 		  procavs[foundhistory].mintrests++;
 		  if (scriptoutput)
-		    {
-		      fprintf(stdout,"[mem,%s,%i,+1,%i,%i]\n", procavs[foundhistory].command,
-			     procavs[foundhistory].lastpid,
-			     procavs[foundhistory].intrest_score,
-			     procavs[foundhistory].num_intrests);
-		      fflush(stdout);
-		    }
+		    script_output("mem", procavs[foundhistory].command,
+				  procavs[foundhistory].lastpid,
+				  1, procavs[foundhistory].intrest_score,
+				  procavs[foundhistory].num_intrests);
 		}
 	      if (procavs[foundhistory].avg_size_gain < 0)
 		{
 		  procavs[foundhistory].intrest_score = procavs[foundhistory].intrest_score - 1;
 		  if (scriptoutput)
-		    {
-		      fprintf(stdout, "[mem,%s,%i,-1,%i,%i]\n", procavs[foundhistory].command,
-			     procavs[foundhistory].lastpid,
-			     procavs[foundhistory].intrest_score,
-			     procavs[foundhistory].num_intrests);
-		      fflush(stdout);
-		    }
+		    script_output("mem", procavs[foundhistory].command,
+				  procavs[foundhistory].lastpid,
+				  -1, procavs[foundhistory].intrest_score,
+				  procavs[foundhistory].num_intrests);
 		}
 	      procavs[foundhistory].avg_rssize_gain = procsnap[i]._rssize - procavs[foundhistory].last_rssize;
 	      procavs[foundhistory].last_rssize = procsnap[i]._rssize;
@@ -185,25 +188,19 @@ void* analyzer_thread(void *a)
 		  procavs[foundhistory].intrest_score = procavs[foundhistory].intrest_score + 1;
 		  procavs[foundhistory].mintrests++;
 		  if (scriptoutput)
-		    {
-		      fprintf(stdout, "[rss,%s,%i,+1,%i,%i]\n", procavs[foundhistory].command,
-			     procavs[foundhistory].lastpid,
-			     procavs[foundhistory].intrest_score,
-			     procavs[foundhistory].num_intrests);
-		      fflush(stdout);
-		    }
+		    script_output("rss", procavs[foundhistory].command,
+				  procavs[foundhistory].lastpid,
+				  1, procavs[foundhistory].intrest_score,
+				  procavs[foundhistory].num_intrests);
 		}
 	      if (procavs[foundhistory].avg_rssize_gain < 0)
 		{
 		  procavs[foundhistory].intrest_score = procavs[foundhistory].intrest_score - 1;
 		  if (scriptoutput)
-		    {
-		      fprintf(stdout, "[rss,%s,%i,-1,%i,%i]\n", procavs[foundhistory].command,
-			     procavs[foundhistory].lastpid,
-			     procavs[foundhistory].intrest_score,
-			     procavs[foundhistory].num_intrests);
-		      fflush(stdout);
-		    }
+		    script_output("rss", procavs[foundhistory].command,
+				  procavs[foundhistory].lastpid,
+				  -1, procavs[foundhistory].intrest_score,
+				  procavs[foundhistory].num_intrests);
 		}
 
 	      if (procavs[foundhistory].intrest_score > procavs[foundhistory].interest_threshold)
