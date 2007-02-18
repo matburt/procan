@@ -22,7 +22,6 @@ void* collector_thread(void *a)
   PROCTAB *proct;
   proc_t  *proc_info;
   int hangup = 0;
-  int i;
   
   while (!hangup)
     {
@@ -68,15 +67,13 @@ void* collector_thread(void *a)
  * this method is here because libproc's freeprocs
  * method does not always seem to be available
  */
-void freep(proc_t* p)
+void freep(proc_t* proc)
 {
-  if (!p)     /* in case p is NULL */
+  if (!proc)
     return;
-  /* ptrs are after strings to avoid copying memory when building them. */
-  /* so free is called on the address of the address of strvec[0]. */
-  if (p->cmdline)
-    free((void*)*p->cmdline);
-  if (p->environ)
-    free((void*)*p->environ);
-  free(p);
+  if (proc->cmdline)
+    free((void*)*proc->cmdline);
+  if (proc->environ)
+    free((void*)*proc->environ);
+  free(proc);
 }
