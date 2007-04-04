@@ -150,6 +150,8 @@ procan_config* get_config()
   pc->nclusions++;
   strncpy(pc->exclusions[pc->nclusions], "swi", 3);
   pc->nclusions++;
+  strncpy(pc->exclusions[pc->nclusions], "irq", 3);
+  pc->nclusions++;
 #endif
   return pc;
 }
