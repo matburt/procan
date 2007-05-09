@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include "procan.h"
 #include "cli.h"
+#include <signal.h>
 
 /* Interactive mode remains in the foreground and recieves commands from stdin
  * it has the same functionality as far as backends as the daemon mode
