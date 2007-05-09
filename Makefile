@@ -1,3 +1,4 @@
+#This is a Gmake file for ProcAn
 os = $(shell uname -s)
 
 ifeq ($(os), Linux)
