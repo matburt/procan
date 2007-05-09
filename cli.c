@@ -12,6 +12,10 @@
 #include "procan.h"
 #include "cli.h"
 
+#if defined (linux)
+#include <signal.h>
+#endif
+
 /* Interactive mode remains in the foreground and recieves commands from stdin
  * it has the same functionality as far as backends as the daemon mode
  * but does not detach */
