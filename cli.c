@@ -36,6 +36,35 @@
 #include "procan.h"
 #include "cli.h"
 #include <signal.h>
+#include <sys/ioctl.h>
+
+int get_screenheight()
+{
+  struct winsize screen;
+  if (ioctl(2,TIOCGWINSZ, &screen) == 0)
+    {
+      if (screen.ws_row > 0)
+        return screen.ws_row;
+      else
+        return 25;
+    }
+  else
+    return 25;
+}
+
+int get_screenwidth()
+{
+  struct winsize screen;
+  if (ioctl(2,TIOCGWINSZ, &screen) == 0)
+    {
+      if (screen.ws_col > 0)
+        return screen.ws_col;
+      else
+        return 80;
+    }
+  else
+    return 80;
+}
 
 /* Interactive mode remains in the foreground and recieves commands from stdin
  * it has the same functionality as far as backends as the daemon mode
