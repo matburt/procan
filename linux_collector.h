@@ -1,4 +1,4 @@
-#include <proc/readproc.h>
+#include "procps/readproc.h"
 
 extern pthread_mutex_t hangup_mutex;
 extern int m_hangup;
