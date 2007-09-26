@@ -14,3 +14,5 @@ extern pthread_mutex_t pconfig_mutex;
 extern void* collector_thread(void *a);
 
 int interactive_mode();
+int get_screenheight();
+int get_screenwidth();

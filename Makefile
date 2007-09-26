@@ -24,7 +24,7 @@ openbsd:
 	@gcc -g -Wall -o procan -lpthread procan.c analyzer.c openbsd_collector.c config.c backend.c cli.c
 linux:
 	@echo "Building the Linux make target with the debug flag."
-	@gcc -g -Wall -o procan -lpthread -lproc procan.c analyzer.c linux_collector.c config.c backend.c cli.c
+	@gcc -g -Wall -o procan -lpthread -lproc-3.2.7 procan.c analyzer.c linux_collector.c config.c backend.c cli.c
 install:
 	@echo "I can't install myself just yet."
 	@echo "Install me yourself or just run from the local directory."
