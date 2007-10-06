@@ -52,7 +52,7 @@ int interactive_mode()
   PANEL *userpanel;
 
   pthread_t *threads;
-  char *procline;
+  char *procline = (char *)malloc(100*sizeof(*procline));;
   int i,e, inp;
   int startx, starty, width, height;
   
@@ -92,8 +92,9 @@ int interactive_mode()
   startx = 0;
   starty = 0;
   
-  proc_win = newwin(height/2, width, starty, startx);
-  user_win = newwin(height/2, width, starty+(height/2), startx);
+  /* Create and set up the windows */
+  proc_win = newwin(height-6, width, starty, startx);
+  user_win = newwin(6, width, starty+(height-6), startx);
 
   procpanel = new_panel(proc_win);
   userpanel = new_panel(user_win);
@@ -104,57 +105,62 @@ int interactive_mode()
   nodelay(user_win, true);
 
 
-  int refreshcounter = 500;
+  int refreshcounter = 0;
 
   // case KEY_VALUE_CAPITAL_Q: /* Quit */
   //case KEY_VALUE_LOWER_Q: 113
   while ((inp = wgetch(proc_win)) != 113 && m_hangup != 1)
     {
-      refreshcounter = 500;
-      struct timeval *now = (struct timeval *)malloc(sizeof(struct timeval));
-      gettimeofday(now,NULL);
-      pthread_mutex_lock(&procchart_mutex);
-      
-      wclear(proc_win);
-      wclear(user_win);
-      mvwaddstr(proc_win, 1, 1, "---=Active Processes=---");          
-      mvwaddstr(user_win, 1, 1, "---=Active Users=---");
-      
-      mvwaddstr(proc_win, 2, 1, "command | lastpid | mov_percent | size_gain | rssize_gain | interest | #interest");
-      for (i = 0; i < numprocavs; i++)
+      if (refreshcounter == 0)
         {
-          if (procavs[i].last_measure_time > now->tv_sec - 30)
+          struct timeval *now = (struct timeval *)malloc(sizeof(struct timeval));
+          gettimeofday(now,NULL);
+          pthread_mutex_lock(&procchart_mutex);
+          
+          wclear(proc_win);
+          wclear(user_win);
+          mvwaddstr(proc_win, 1, 1, "---=Active Processes=---");          
+          mvwaddstr(user_win, 1, 1, "---=Active Users=---");
+          
+          mvwaddstr(proc_win, 2, 1, "command | lastpid | mov_percent | size_gain | rssize_gain | interest | #interest");
+          for (i = 0; i < numprocavs; i++)
             {
-              procline = (char *)malloc(100*sizeof(*procline));
-              snprintf(procline, 100, "%s %i %i %i %i %i %i", 
-                       procavs[i].command,
-                       //procavs[i].uid,
-                       procavs[i].lastpid,
-                       //procavs[i].last_measure_time,
-                       //procavs[i].num_seen,
-                       procavs[i].mov_percent,
-                       procavs[i].avg_size_gain,
-                       procavs[i].avg_rssize_gain,
-                       //procavs[i].times_measured,
-                       procavs[i].intrest_score,
-                       procavs[i].num_intrests);
-              mvwaddstr(proc_win, (i+3), 1, procline);
-              free(procline);
-            }
-          wrefresh(proc_win); 
-          wrefresh(user_win); 
-        } 
-      
-      free(now);
-      pthread_mutex_unlock(&procchart_mutex);
-      /* else if (lcommand == 's')
-         {
-	  printf("Showing the top 5 most interesting active processes and why:\n");
-	  char *info = get_statistics();
-	  printf("%s", info);
-	  free(info); This seems to cause corrupted redzones, not sure why
-          } */
-      sleep(1);
+              if (procavs[i].last_measure_time > now->tv_sec - 30)
+                {
+                  snprintf(procline, 100, "%s %i %i %i %i %i %i", 
+                           procavs[i].command,
+                           //procavs[i].uid,
+                           procavs[i].lastpid,
+                           //procavs[i].last_measure_time,
+                           //procavs[i].num_seen,
+                           procavs[i].mov_percent,
+                           procavs[i].avg_size_gain,
+                           procavs[i].avg_rssize_gain,
+                           //procavs[i].times_measured,
+                           procavs[i].intrest_score,
+                           procavs[i].num_intrests);
+                  mvwaddstr(proc_win, (i+3), 1, procline);
+                }
+
+              box(proc_win, 0, 0);
+              box(user_win, 0, 0);
+              wrefresh(proc_win); 
+              wrefresh(user_win); 
+            } 
+          
+          free(now);
+          pthread_mutex_unlock(&procchart_mutex);
+          /* else if (lcommand == 's')
+             {
+             printf("Showing the top 5 most interesting active processes and why:\n");
+             char *info = get_statistics();
+             printf("%s", info);
+             free(info); This seems to cause corrupted redzones, not sure why
+             } */
+          refreshcounter = 2000;
+        }
+      refreshcounter--;
+      usleep(10);
     }
 
   endwin();
@@ -169,6 +175,7 @@ int interactive_mode()
   pthread_mutex_destroy(&procchart_mutex);
   pthread_mutex_destroy(&pconfig_mutex);
   free(threads);
+  free(procline);
 #if defined (linux)
   for (i = 0; i < numprocsnap; i++)
     {

@@ -382,7 +382,7 @@ void usage()
   printf("  s: Show the top 5 most interesting processes and users\n");
   printf("  q: Quit\n\n");
   printf("Author: Matthew W. Jones <mat@matburt.net>\n");
-  printf("http://matburt.homeunix.com/projects/procan\n");
+  printf("http://matburt.net/projects/procan\n");
 }
 
 /* Signal handler, signals registered in main */
@@ -397,7 +397,7 @@ void handle_sig(int sig)
       pc = get_config();
       pthread_mutex_unlock(&pconfig_mutex);
       break;
-    case SIGTERM: /* Will not shutdown interactive mode because getchar() blocks for input */
+    case SIGTERM:
       printf("Shutting Down ProcAn\n");
       pthread_mutex_lock(&hangup_mutex);
       m_hangup=1;
@@ -419,29 +419,29 @@ int main(int argc, char *argv[])
   /* Read the command line arguments */
   for (i = 0; i < argc; i++)
     {
-      if (strcmp(argv[i], "-i") == 0)
+      if (strncmp(argv[i], "-i", 2) == 0)
 	intract = INTERACTIVE_MODE;
-      else if (strcmp(argv[i], "-d") == 0)
+      else if (strncmp(argv[i], "-d", 2) == 0)
 	intract = BACKGROUND_MODE;
-      else if (strcmp(argv[i], "-p") == 0)
+      else if (strncmp(argv[i], "-p", 2) == 0)
 	intract = PIPE_MODE;
-      else if (strcmp(argv[i], "-b") == 0)
+      else if (strncmp(argv[i], "-b", 2) == 0)
 	{
 	  printf("Using backends: ");
 	  for (j = 0; j < ((argc-i+1 < 3) ? argc-i : 3); j++)
 	    {
 	      i++;
-	      if (strcmp(argv[i], "mail") == 0)
+	      if (strncmp(argv[i], "mail", 4) == 0)
 		{
 		  bes[j] = MAIL_BACKEND;
 		  printf(" mail");
 		}
-	      else if (strcmp(argv[i], "script") == 0)
+	      else if (strncmp(argv[i], "script", 6) == 0)
 		{
 		  bes[j] = SCRIPT_BACKEND;
 		  printf(" script");
 		}
-	      else if (strcmp(argv[i], "syslog") == 0)
+	      else if (strncmp(argv[i], "syslog", 6) == 0)
 		{
 		  bes[j] = SYSLOG_BACKEND;
 		  printf(" syslog");
