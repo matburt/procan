@@ -56,7 +56,7 @@ int interactive_mode()
   int i,e, inp;
   int startx, starty, width, height;
   
-  /* The 2 signals we watch for, and ignore the return value of children */
+  /* The 3 signals we watch for, and ignore the return value of children */
   signal(SIGCHLD, SIG_IGN);
   signal(SIGHUP, handle_sig);
   signal(SIGTERM, handle_sig);
@@ -81,9 +81,8 @@ int interactive_mode()
   noecho();
   start_color();
   init_pair(1, COLOR_WHITE, COLOR_BLACK);
-  init_pair(2, COLOR_CYAN, COLOR_BLACK);
-  init_pair(3, COLOR_MAGENTA, COLOR_WHITE);
-  init_pair(4, COLOR_WHITE, COLOR_BLUE);
+  init_pair(2, COLOR_BLACK, COLOR_WHITE);
+  init_pair(3, COLOR_RED, COLOR_BLACK);
   bkgd(COLOR_PAIR(1));
   refresh();
   
@@ -107,27 +106,31 @@ int interactive_mode()
 
   int refreshcounter = 0;
 
-  // case KEY_VALUE_CAPITAL_Q: /* Quit */
-  //case KEY_VALUE_LOWER_Q: 113
+  struct timeval *now = (struct timeval *)malloc(sizeof(struct timeval));;
+
   while ((inp = wgetch(proc_win)) != 113 && m_hangup != 1)
     {
       if (refreshcounter == 0)
         {
-          struct timeval *now = (struct timeval *)malloc(sizeof(struct timeval));
           gettimeofday(now,NULL);
           pthread_mutex_lock(&procchart_mutex);
           
           wclear(proc_win);
           wclear(user_win);
-          mvwaddstr(proc_win, 1, 1, "---=Active Processes=---");          
-          mvwaddstr(user_win, 1, 1, "---=Active Users=---");
-          
-          mvwaddstr(proc_win, 2, 1, "command | lastpid | mov_percent | size_gain | rssize_gain | interest | #interest");
+          wattron(proc_win, COLOR_PAIR(3));
+          wattron(user_win, COLOR_PAIR(3));
+          mvwaddstr(proc_win, 1, 1, "Active Processes:");          
+          mvwaddstr(user_win, 1, 1, "Active Users:");
+          wattron(proc_win, COLOR_PAIR(2));
+          wattron(user_win, COLOR_PAIR(2));
+          mvwaddstr(proc_win, 2, 1, "command | lpid | +/-% | szgn | rsszgn | I | #I");
+          wattron(proc_win, COLOR_PAIR(1));
+          wattron(user_win, COLOR_PAIR(1));
           for (i = 0; i < numprocavs; i++)
             {
               if (procavs[i].last_measure_time > now->tv_sec - 30)
                 {
-                  snprintf(procline, 100, "%s %i %i %i %i %i %i", 
+                  snprintf(procline, 100, "%8.8s %6i %6i %6i %8i %3i %3i", 
                            procavs[i].command,
                            //procavs[i].uid,
                            procavs[i].lastpid,
@@ -148,7 +151,7 @@ int interactive_mode()
               wrefresh(user_win); 
             } 
           
-          free(now);
+          //free(now);
           pthread_mutex_unlock(&procchart_mutex);
           /* else if (lcommand == 's')
              {
@@ -157,10 +160,10 @@ int interactive_mode()
              printf("%s", info);
              free(info); This seems to cause corrupted redzones, not sure why
              } */
-          refreshcounter = 2000;
+          refreshcounter = 3000;
         }
       refreshcounter--;
-      usleep(10);
+      usleep(20);
     }
 
   endwin();
@@ -194,3 +197,18 @@ int interactive_mode()
   return 0;
 }
 
+/* Reformat a string by padding it or truncating it to flen */
+char* rfmtstr(char *str, int flen)
+{
+  if (strlen(str) >= flen)
+    str[flen] = '\0';
+  else
+    {
+      int i;
+      for (i = 0; i < (flen-strlen(str)); i++)
+        {
+          strncat(str, " ", 1);
+        }
+    }
+  return str;
+}

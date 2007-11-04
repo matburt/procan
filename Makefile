@@ -17,14 +17,14 @@ all: $(target)
 unsupported:
 	@echo "target os" $(os) " is not supported"
 freebsd:
-	@echo "Building the FreeBSD make target with the debug flag."
+	@echo "Building the FreeBSD make target."
 	@gcc -O2 -Wall -o procan -lcurses -lpanel -lkvm -lpthread procan.c analyzer.c freebsd_collector.c config.c backend.c cli.c
 openbsd:
-	@echo "Building the OpenBSD make target with the debug flag."
+	@echo "Building the OpenBSD make target."
 	@gcc -O2 -Wall -o procan -lcurses -lpanel -lpthread procan.c analyzer.c openbsd_collector.c config.c backend.c cli.c
 linux:
-	@echo "Building the Linux make target with the debug flag."
-	@gcc -O2 -Wall -o procan -lcurses -lpanel -lpthread -lproc-3.2.7 procan.c analyzer.c linux_collector.c config.c backend.c cli.c
+	@echo "Building the Linux make target."
+	@gcc -Os -Wall -o procan -lcurses -lpanel -lpthread -lproc-3.2.7 procan.c analyzer.c linux_collector.c config.c backend.c cli.c
 debug-linux:
 	@echo "Building the Linux debug target.";
 	@gcc -O2 -Wall -o procan -lcurses -lpanel -lpthread -lproc-3.2.7 procan.c analyzer.c linux_collector.c config.c backend.c cli.c
