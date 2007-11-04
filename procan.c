@@ -203,9 +203,7 @@ int pipe_mode()
   pthread_mutex_lock(&hangup_mutex);
   while (m_hangup != 1)
     {
-      pthread_mutex_unlock(&hangup_mutex);
       sleep(2);  /* Pipe mode output is handled in the analyzer thread */
-      pthread_mutex_lock(&hangup_mutex);
     }
 
   pthread_mutex_lock(&hangup_mutex);
