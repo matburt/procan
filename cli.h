@@ -16,4 +16,3 @@ extern void* collector_thread(void *a);
 int interactive_mode();
 int get_screenheight();
 int get_screenwidth();
-char* rfmtstr(char *str, int flen);

@@ -196,19 +196,3 @@ int interactive_mode()
   
   return 0;
 }
-
-/* Reformat a string by padding it or truncating it to flen */
-char* rfmtstr(char *str, int flen)
-{
-  if (strlen(str) >= flen)
-    str[flen] = '\0';
-  else
-    {
-      int i;
-      for (i = 0; i < (flen-strlen(str)); i++)
-        {
-          strncat(str, " ", 1);
-        }
-    }
-  return str;
-}
