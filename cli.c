@@ -126,40 +126,52 @@ int interactive_mode()
           mvwaddstr(proc_win, 2, 1, "command | lpid | +/-% | szgn | rsszgn | I | #I");
           wattron(proc_win, COLOR_PAIR(1));
           wattron(user_win, COLOR_PAIR(1));
+
+          int *mis = (int *)calloc(numprocavs, sizeof(int));
+          int *uis = (int *)malloc(numprocavs*sizeof(int));
+          int *numints = (int *)malloc(numprocavs*sizeof(int));
+
+          int numids = get_statistics(mis, uis, numints);
+
+          //for (i = (numprocavs-1); i >= 0; i--)
           for (i = 0; i < numprocavs; i++)
             {
-              if (procavs[i].last_measure_time > now->tv_sec - 30)
+              if (procavs[mis[i]].last_measure_time > now->tv_sec - 30)
                 {
                   snprintf(procline, 100, "%8.8s %6i %6i %6i %8i %3i %3i", 
-                           procavs[i].command,
+                           procavs[mis[i]].command,
                            //procavs[i].uid,
-                           procavs[i].lastpid,
+                           procavs[mis[i]].lastpid,
                            //procavs[i].last_measure_time,
                            //procavs[i].num_seen,
-                           procavs[i].mov_percent,
-                           procavs[i].avg_size_gain,
-                           procavs[i].avg_rssize_gain,
+                           procavs[mis[i]].mov_percent,
+                           procavs[mis[i]].avg_size_gain,
+                           procavs[mis[i]].avg_rssize_gain,
                            //procavs[i].times_measured,
-                           procavs[i].intrest_score,
-                           procavs[i].num_intrests);
+                           procavs[mis[i]].intrest_score,
+                           procavs[mis[i]].num_intrests);
                   mvwaddstr(proc_win, (i+3), 1, procline);
                 }
 
-              box(proc_win, 0, 0);
-              box(user_win, 0, 0);
-              wrefresh(proc_win); 
-              wrefresh(user_win); 
-            } 
+            }
+
+          //for (i = numids-1; i >= 0; i--)
+          for (i = 0; i < numids; i++)
+            {
+              snprintf(procline, 100, "%5i (%i)", uis[i], numints[i]);
+              mvwaddstr(user_win, (i+2), 1, procline);
+            }
+
+          free(mis);
+          free(uis);
+          free(numints);
           
-          //free(now);
+          box(proc_win, 0, 0);
+          box(user_win, 0, 0);
+          wrefresh(proc_win); 
+          wrefresh(user_win); 
+          
           pthread_mutex_unlock(&procchart_mutex);
-          /* else if (lcommand == 's')
-             {
-             printf("Showing the top 5 most interesting active processes and why:\n");
-             char *info = get_statistics();
-             printf("%s", info);
-             free(info); This seems to cause corrupted redzones, not sure why
-             } */
           refreshcounter = 3000;
         }
       refreshcounter--;

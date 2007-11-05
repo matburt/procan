@@ -75,11 +75,69 @@ int *bes;
 /* Used to signal to the analyzer to use script output or human-readable output */
 int scriptoutput = 0;
 
+/* Sorts processes and generates and sorts userlist */
+int get_statistics(int *mis, int *uis, int *numints)
+{
+  int holder, i, j;
+  int numids = 0;
+  for (i = 0; i < numprocavs; i++)
+    {
+      mis[i] = i;
+      int found=0;
+      for (j = 0; j < numids; j++)
+	{
+	  if (uis[j] == procavs[i].uid)
+	    {
+	      numints[j]+=procavs[i].num_intrests;
+	      found = 1;
+	      break;
+	    }
+	} 
+
+      if (!found)
+	{
+	  uis[numids] = procavs[i].uid;
+	  numints[numids] = procavs[i].num_intrests;
+	  numids++;
+	}
+    }
+  for (i = (numids-1); i >= 0; i--)
+    {
+      for (j = 1; j <= i; j++)
+	{
+	  if (numints[j-1] > numints[j])
+	    {
+	      holder = numints[j-1];
+	      numints[j-1] = numints[j];
+	      numints[j] = holder;
+	      holder = uis[j-1];
+	      uis[j-1] = uis[j];
+	      uis[j] = holder;		
+	    }
+	}
+      
+    }
+  
+  for (i = (numprocavs-1); i >= 0; i--)
+    {
+      for (j = 1; j <= i; j++)
+	{
+	  if (procavs[mis[j-1]].num_intrests > procavs[mis[j]].num_intrests)
+	    {
+	      holder = mis[j-1];
+	      mis[j-1] = mis[j];
+	      mis[j] = holder;
+	    }
+	}
+    }
+  return numids;
+}
+
 /* Fetches a long string with the top 5 processes and why they are the top 5
  * Will also display the top 5 most interesting users. 
  * Calling function must free
  */
-char* get_statistics()
+char* get_statistics_str()
 {
   int *mis = (int *)calloc(numprocavs, sizeof(int));
   int *uis = (int *)malloc(numprocavs*sizeof(int));
@@ -166,7 +224,7 @@ char* get_statistics()
 	       uis[i],
 	       numints[i]);
       nowstats = strncat(nowstats, (const char *)thenstats, 50);
-    }
+      }
 #if defined (linux) //Wish I could do this on FreeBSD
   if (thenstats != NULL)
 #endif
@@ -456,7 +514,7 @@ int main(int argc, char *argv[])
 	  printf("\n");
 	}
     }
-
+  
   pc = get_config();
 
   if (intract == INTERACTIVE_MODE)
