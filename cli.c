@@ -34,49 +34,29 @@
 #include <sys/param.h>
 #include <pthread.h>
 #include <unistd.h>
-#include "procan.h"
-#include "cli.h"
+#include <curses.h>
+#include <panel.h>
 #include <signal.h>
 #include <sys/ioctl.h>
-
-int get_screenheight()
-{
-  struct winsize screen;
-  if (ioctl(2,TIOCGWINSZ, &screen) == 0)
-    {
-      if (screen.ws_row > 0)
-        return screen.ws_row;
-      else
-        return 25;
-    }
-  else
-    return 25;
-}
-
-int get_screenwidth()
-{
-  struct winsize screen;
-  if (ioctl(2,TIOCGWINSZ, &screen) == 0)
-    {
-      if (screen.ws_col > 0)
-        return screen.ws_col;
-      else
-        return 80;
-    }
-  else
-    return 80;
-}
+#include "procan.h"
+#include "cli.h"
 
 /* Interactive mode remains in the foreground and recieves commands from stdin
  * it has the same functionality as far as backends as the daemon mode
  * but does not detach */
 int interactive_mode()
 {
-  pthread_t *threads;
-  char lcommand;
-  int i,e;
+  WINDOW *proc_win;
+  WINDOW *user_win;
+  PANEL *procpanel;
+  PANEL *userpanel;
 
-  /* The 2 signals we watch for, and ignore the return value of children */
+  pthread_t *threads;
+  char *procline = (char *)malloc(100*sizeof(*procline));;
+  int i,e, inp;
+  int startx, starty, width, height;
+  
+  /* The 3 signals we watch for, and ignore the return value of children */
   signal(SIGCHLD, SIG_IGN);
   signal(SIGHUP, handle_sig);
   signal(SIGTERM, handle_sig);
@@ -93,45 +73,110 @@ int interactive_mode()
     printf("collector experienced a pthread error: %i\n",e);
   if (( e = pthread_create(&threads[1], NULL, analyzer_thread, NULL)) != 0)
     printf("analyzer experienced a pthread error: %i\n",e);
- 
-  while ((lcommand = getchar()) != 'q' && m_hangup != 1)
+
+  /* Start Curses */
+  initscr();			
+  cbreak();			
+  keypad(stdscr, TRUE);
+  noecho();
+  start_color();
+  init_pair(1, COLOR_WHITE, COLOR_BLACK);
+  init_pair(2, COLOR_BLACK, COLOR_WHITE);
+  init_pair(3, COLOR_RED, COLOR_BLACK);
+  bkgd(COLOR_PAIR(1));
+  refresh();
+  
+  /* get the full screen's coordinate */
+  getmaxyx(stdscr, height, width);
+  startx = 0;
+  starty = 0;
+  
+  /* Create and set up the windows */
+  proc_win = newwin(height-6, width, starty, startx);
+  user_win = newwin(6, width, starty+(height-6), startx);
+
+  procpanel = new_panel(proc_win);
+  userpanel = new_panel(user_win);
+
+  update_panels();
+  doupdate();
+  nodelay(proc_win, true);
+  nodelay(user_win, true);
+
+
+  int refreshcounter = 0;
+
+  struct timeval *now = (struct timeval *)malloc(sizeof(struct timeval));;
+
+  while ((inp = wgetch(proc_win)) != 113 && m_hangup != 1)
     {
-      if (lcommand == 'p')
-	{
-	  struct timeval *now = (struct timeval *)malloc(sizeof(struct timeval));
-	  gettimeofday(now,NULL);
-	  pthread_mutex_lock(&procchart_mutex);
-	  printf("command -- lastpid -- lasttime -- num_seen -- mov_percent -- size_gain -- rssize_gain -- #measures -- interest -- num interests\n");
-	  for (i = 0; i < numprocavs; i++)
-	    {
-	      if (procavs[i].last_measure_time > now->tv_sec - 30)
-		{
-		  printf("%s -- %i -- %i -- %li -- %i -- %i -- %i -- %i -- %i -- %i -- %i\n", 
-			 procavs[i].command,
-			 procavs[i].uid,
-			 procavs[i].lastpid,
-			 procavs[i].last_measure_time,
-			 procavs[i].num_seen,
-			 procavs[i].mov_percent,
-			 procavs[i].avg_size_gain,
-			 procavs[i].avg_rssize_gain,
-			 procavs[i].times_measured,
-			 procavs[i].intrest_score,
-			 procavs[i].num_intrests);
-		}
-	    }
-	  free(now);
-	  pthread_mutex_unlock(&procchart_mutex);
-	}
-      else if (lcommand == 's')
-	{
-	  printf("Showing the top 5 most interesting active processes and why:\n");
-	  char *info = get_statistics();
-	  printf("%s", info);
-	  //free(info); /* This seems to cause corrupted redzones, not sure why */
-	}
+      if (refreshcounter == 0)
+        {
+          gettimeofday(now,NULL);
+          pthread_mutex_lock(&procchart_mutex);
+          
+          wclear(proc_win);
+          wclear(user_win);
+          wattron(proc_win, COLOR_PAIR(3));
+          wattron(user_win, COLOR_PAIR(3));
+          mvwaddstr(proc_win, 1, 1, "Active Processes:");          
+          mvwaddstr(user_win, 1, 1, "Active Users:");
+          wattron(proc_win, COLOR_PAIR(2));
+          wattron(user_win, COLOR_PAIR(2));
+          mvwaddstr(proc_win, 2, 1, "command | lpid | cpu |  rssz  | cpugn | szgn | rsszgn | I | #I");
+          wattron(proc_win, COLOR_PAIR(1));
+          wattron(user_win, COLOR_PAIR(1));
+
+          int *mis = (int *)calloc(numprocavs, sizeof(int));
+          int *uis = (int *)malloc(numprocavs*sizeof(int));
+          int *numints = (int *)malloc(numprocavs*sizeof(int));
+
+          int numids = get_statistics(mis, uis, numints);
+
+          //for (i = (numprocavs-1); i >= 0; i--)
+          for (i = 0; i < numprocavs; i++)
+            {
+              if (procavs[mis[i]].last_measure_time > now->tv_sec - 30)
+                {
+                  snprintf(procline, 100, "%8.8s %6i %5i %6i %6i %6i %8i %3i %3i", 
+                           procavs[mis[i]].command,
+                           procavs[mis[i]].lastpid,
+                           procavs[mis[i]].last_percent,
+                           procavs[mis[i]].last_rssize,
+                           procavs[mis[i]].mov_percent,
+                           procavs[mis[i]].avg_size_gain,
+                           procavs[mis[i]].avg_rssize_gain,
+                           procavs[mis[i]].intrest_score,
+                           procavs[mis[i]].num_intrests);
+                  mvwaddstr(proc_win, (i+3), 1, procline);
+                }
+
+            }
+
+          //for (i = numids-1; i >= 0; i--)
+          for (i = 0; i < numids; i++)
+            {
+              snprintf(procline, 100, "%5i (%i)", uis[i], numints[i]);
+              mvwaddstr(user_win, (i+2), 1, procline);
+            }
+
+          free(mis);
+          free(uis);
+          free(numints);
+          
+          box(proc_win, 0, 0);
+          box(user_win, 0, 0);
+          wrefresh(proc_win); 
+          wrefresh(user_win); 
+          
+          pthread_mutex_unlock(&procchart_mutex);
+          refreshcounter = 3000;
+        }
+      refreshcounter--;
+      usleep(20);
     }
 
+  endwin();
   pthread_mutex_lock(&hangup_mutex);
   m_hangup=1;
   pthread_mutex_unlock(&hangup_mutex);
@@ -143,6 +188,7 @@ int interactive_mode()
   pthread_mutex_destroy(&procchart_mutex);
   pthread_mutex_destroy(&pconfig_mutex);
   free(threads);
+  free(procline);
 #if defined (linux)
   for (i = 0; i < numprocsnap; i++)
     {
@@ -157,7 +203,6 @@ int interactive_mode()
 	free(procavs[i].command);
     }
   free(procavs);
-
+  
   return 0;
 }
-

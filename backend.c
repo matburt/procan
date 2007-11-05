@@ -64,9 +64,9 @@ int syslog_backend(procan_config *pc, struct timeval *schedtime)
       printf("Logging to syslog.\n");
       schedtime->tv_sec = nowtime->tv_sec + ((pc->logfrequency * 60) * 60);
       openlog("procan", LOG_CONS, LOG_DAEMON);
-      char *info = get_statistics();
+      char *info = get_statistics_str();
       syslog(LOG_NOTICE, "Interesting Processes: %s", info);
-      //free(info); /* Seems to cause corrupted redzone */
+      //free(info); /* Seems to cause corrupted redzone
       closelog();
     }
 
@@ -144,7 +144,7 @@ int mail_backend(procan_config *pc, struct timeval *schedtime)
 	  getlogin_r(uname, MAXLOGNAME);
 	  fprintf(mailpipe, "From: %s\n", uname);
 	  fprintf(mailpipe, "Subject: Procan Status Report\n");
-	  char *info = get_statistics();
+	  char *info = get_statistics_str();
 	  fprintf(mailpipe, "%s", info);
 	  pclose(mailpipe);
 	  free(uname);

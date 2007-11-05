@@ -102,8 +102,11 @@ procan_config* get_config(void);
 /* Handles the freeing of the config struct */
 void free_config(procan_config *pc);
 
+/* Will sort statistics suitable for display */
+int get_statistics(int *mis, int *uis, int *numints);
+
 /* Will fetch a character array of statistics */
-char* get_statistics(void);
+char* get_statistics_str(void);
 
 /* Perform hourly housekeeping */
 void perform_housekeeping(void);

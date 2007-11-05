@@ -75,11 +75,69 @@ int *bes;
 /* Used to signal to the analyzer to use script output or human-readable output */
 int scriptoutput = 0;
 
+/* Sorts processes and generates and sorts userlist */
+int get_statistics(int *mis, int *uis, int *numints)
+{
+  int holder, i, j;
+  int numids = 0;
+  for (i = 0; i < numprocavs; i++)
+    {
+      mis[i] = i;
+      int found=0;
+      for (j = 0; j < numids; j++)
+	{
+	  if (uis[j] == procavs[i].uid)
+	    {
+	      numints[j]+=procavs[i].num_intrests;
+	      found = 1;
+	      break;
+	    }
+	} 
+
+      if (!found)
+	{
+	  uis[numids] = procavs[i].uid;
+	  numints[numids] = procavs[i].num_intrests;
+	  numids++;
+	}
+    }
+  for (i = (numids-1); i >= 0; i--)
+    {
+      for (j = 1; j <= i; j++)
+	{
+	  if (numints[j-1] > numints[j])
+	    {
+	      holder = numints[j-1];
+	      numints[j-1] = numints[j];
+	      numints[j] = holder;
+	      holder = uis[j-1];
+	      uis[j-1] = uis[j];
+	      uis[j] = holder;		
+	    }
+	}
+      
+    }
+  
+  for (i = (numprocavs-1); i >= 0; i--)
+    {
+      for (j = 1; j <= i; j++)
+	{
+	  if (procavs[mis[j-1]].num_intrests > procavs[mis[j]].num_intrests)
+	    {
+	      holder = mis[j-1];
+	      mis[j-1] = mis[j];
+	      mis[j] = holder;
+	    }
+	}
+    }
+  return numids;
+}
+
 /* Fetches a long string with the top 5 processes and why they are the top 5
  * Will also display the top 5 most interesting users. 
  * Calling function must free
  */
-char* get_statistics()
+char* get_statistics_str()
 {
   int *mis = (int *)calloc(numprocavs, sizeof(int));
   int *uis = (int *)malloc(numprocavs*sizeof(int));
@@ -166,7 +224,7 @@ char* get_statistics()
 	       uis[i],
 	       numints[i]);
       nowstats = strncat(nowstats, (const char *)thenstats, 50);
-    }
+      }
 #if defined (linux) //Wish I could do this on FreeBSD
   if (thenstats != NULL)
 #endif
@@ -380,7 +438,7 @@ void usage()
   printf("  s: Show the top 5 most interesting processes and users\n");
   printf("  q: Quit\n\n");
   printf("Author: Matthew W. Jones <mat@matburt.net>\n");
-  printf("http://matburt.homeunix.com/projects/procan\n");
+  printf("http://matburt.net/projects/procan\n");
 }
 
 /* Signal handler, signals registered in main */
@@ -395,7 +453,7 @@ void handle_sig(int sig)
       pc = get_config();
       pthread_mutex_unlock(&pconfig_mutex);
       break;
-    case SIGTERM: /* Will not shutdown interactive mode because getchar() blocks for input */
+    case SIGTERM:
       printf("Shutting Down ProcAn\n");
       pthread_mutex_lock(&hangup_mutex);
       m_hangup=1;
@@ -417,29 +475,29 @@ int main(int argc, char *argv[])
   /* Read the command line arguments */
   for (i = 0; i < argc; i++)
     {
-      if (strcmp(argv[i], "-i") == 0)
+      if (strncmp(argv[i], "-i", 2) == 0)
 	intract = INTERACTIVE_MODE;
-      else if (strcmp(argv[i], "-d") == 0)
+      else if (strncmp(argv[i], "-d", 2) == 0)
 	intract = BACKGROUND_MODE;
-      else if (strcmp(argv[i], "-p") == 0)
+      else if (strncmp(argv[i], "-p", 2) == 0)
 	intract = PIPE_MODE;
-      else if (strcmp(argv[i], "-b") == 0)
+      else if (strncmp(argv[i], "-b", 2) == 0)
 	{
 	  printf("Using backends: ");
 	  for (j = 0; j < ((argc-i+1 < 3) ? argc-i : 3); j++)
 	    {
 	      i++;
-	      if (strcmp(argv[i], "mail") == 0)
+	      if (strncmp(argv[i], "mail", 4) == 0)
 		{
 		  bes[j] = MAIL_BACKEND;
 		  printf(" mail");
 		}
-	      else if (strcmp(argv[i], "script") == 0)
+	      else if (strncmp(argv[i], "script", 6) == 0)
 		{
 		  bes[j] = SCRIPT_BACKEND;
 		  printf(" script");
 		}
-	      else if (strcmp(argv[i], "syslog") == 0)
+	      else if (strncmp(argv[i], "syslog", 6) == 0)
 		{
 		  bes[j] = SYSLOG_BACKEND;
 		  printf(" syslog");
@@ -454,7 +512,7 @@ int main(int argc, char *argv[])
 	  printf("\n");
 	}
     }
-
+  
   pc = get_config();
 
   if (intract == INTERACTIVE_MODE)
