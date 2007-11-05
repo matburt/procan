@@ -123,7 +123,7 @@ int interactive_mode()
           mvwaddstr(user_win, 1, 1, "Active Users:");
           wattron(proc_win, COLOR_PAIR(2));
           wattron(user_win, COLOR_PAIR(2));
-          mvwaddstr(proc_win, 2, 1, "command | lpid | +/-% | szgn | rsszgn | I | #I");
+          mvwaddstr(proc_win, 2, 1, "command | lpid | cpu |  rssz  | cpugn | szgn | rsszgn | I | #I");
           wattron(proc_win, COLOR_PAIR(1));
           wattron(user_win, COLOR_PAIR(1));
 
@@ -138,16 +138,14 @@ int interactive_mode()
             {
               if (procavs[mis[i]].last_measure_time > now->tv_sec - 30)
                 {
-                  snprintf(procline, 100, "%8.8s %6i %6i %6i %8i %3i %3i", 
+                  snprintf(procline, 100, "%8.8s %6i %5i %6i %6i %6i %8i %3i %3i", 
                            procavs[mis[i]].command,
-                           //procavs[i].uid,
                            procavs[mis[i]].lastpid,
-                           //procavs[i].last_measure_time,
-                           //procavs[i].num_seen,
+                           procavs[mis[i]].last_percent,
+                           procavs[mis[i]].last_rssize,
                            procavs[mis[i]].mov_percent,
                            procavs[mis[i]].avg_size_gain,
                            procavs[mis[i]].avg_rssize_gain,
-                           //procavs[i].times_measured,
                            procavs[mis[i]].intrest_score,
                            procavs[mis[i]].num_intrests);
                   mvwaddstr(proc_win, (i+3), 1, procline);
