@@ -106,7 +106,7 @@ int interactive_mode()
 
   int refreshcounter = 0;
 
-  struct timeval *now = (struct timeval *)malloc(sizeof(struct timeval));;
+  struct timeval *now = (struct timeval *)malloc(sizeof(struct timeval));
 
   while ((inp = wgetch(proc_win)) != 113 && m_hangup != 1)
     {
