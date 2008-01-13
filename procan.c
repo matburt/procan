@@ -122,7 +122,7 @@ int get_statistics(int *mis, int *uis, int *numints)
     {
       for (j = 1; j <= i; j++)
 	{
-	  if (procavs[mis[j-1]].num_intrests > procavs[mis[j]].num_intrests)
+	  if (procavs[mis[j-1]].num_intrests < procavs[mis[j]].num_intrests)
 	    {
 	      holder = mis[j-1];
 	      mis[j-1] = mis[j];
