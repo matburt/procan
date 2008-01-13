@@ -79,11 +79,6 @@ int interactive_mode()
   cbreak();			
   keypad(stdscr, TRUE);
   noecho();
-  start_color();
-  init_pair(1, COLOR_WHITE, COLOR_BLACK);
-  init_pair(2, COLOR_BLACK, COLOR_WHITE);
-  init_pair(3, COLOR_RED, COLOR_BLACK);
-  bkgd(COLOR_PAIR(1));
   refresh();
   
   /* get the full screen's coordinate */
@@ -117,15 +112,9 @@ int interactive_mode()
           
           wclear(proc_win);
           wclear(user_win);
-          wattron(proc_win, COLOR_PAIR(3));
-          wattron(user_win, COLOR_PAIR(3));
           mvwaddstr(proc_win, 1, 1, "Active Processes:");          
           mvwaddstr(user_win, 1, 1, "Active Users:");
-          wattron(proc_win, COLOR_PAIR(2));
-          wattron(user_win, COLOR_PAIR(2));
           mvwaddstr(proc_win, 2, 1, "command | lpid | cpu |  rssz  | cpugn | szgn | rsszgn | I | #I");
-          wattron(proc_win, COLOR_PAIR(1));
-          wattron(user_win, COLOR_PAIR(1));
 
           int *mis = (int *)calloc(numprocavs, sizeof(int));
           int *uis = (int *)malloc(numprocavs*sizeof(int));
@@ -133,7 +122,6 @@ int interactive_mode()
 
           int numids = get_statistics(mis, uis, numints);
 
-          //for (i = (numprocavs-1); i >= 0; i--)
           for (i = 0; i < numprocavs; i++)
             {
               if (procavs[mis[i]].last_measure_time > now->tv_sec - 30)
@@ -153,7 +141,6 @@ int interactive_mode()
 
             }
 
-          //for (i = numids-1; i >= 0; i--)
           for (i = 0; i < numids; i++)
             {
               snprintf(procline, 100, "%5i (%i)", uis[i], numints[i]);
@@ -170,7 +157,7 @@ int interactive_mode()
           wrefresh(user_win); 
           
           pthread_mutex_unlock(&procchart_mutex);
-          refreshcounter = 3000;
+          refreshcounter = 5000;
         }
       refreshcounter--;
       usleep(20);
