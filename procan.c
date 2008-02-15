@@ -203,7 +203,7 @@ char* get_statistics_str()
       if (procavs[mis[i]].num_intrests < 1)
 	continue;
       place++;
-      snprintf(thenstats,50,"%i: %s (%s) because of %s %s %s\n",
+      snprintf(thenstats,50,"%i: %s (%i) because of %s %s %s\n",
 	       place,
 	       procavs[mis[i]].command,
                procavs[mis[i]].lastpid,
