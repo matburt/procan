@@ -203,9 +203,10 @@ char* get_statistics_str()
       if (procavs[mis[i]].num_intrests < 1)
 	continue;
       place++;
-      snprintf(thenstats,50,"%i: %s because of %s %s %s\n",
+      snprintf(thenstats,50,"%i: %s (%s) because of %s %s %s\n",
 	       place,
 	       procavs[mis[i]].command,
+               procavs[mis[i]].lastpid,
 	       (procavs[mis[i]].pintrests > procavs[mis[i]].mintrests) ? "process load." : "memory usage.",
 	       (procavs[mis[i]].swarned || procavs[mis[i]].dwarned || procavs[mis[i]].mwarned) ? "*WARNED*" : "",
 	       (procavs[mis[i]].salarmed || procavs[mis[i]].dalarmed || procavs[mis[i]].malarmed) ? "*ALARMED*" : "");
