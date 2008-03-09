@@ -435,8 +435,6 @@ void usage()
   printf("  script: Run a script or scripts based on given conditions\n");
   printf("  syslog: Log to syslog periodically\n\n");
   printf("Interactive Mode Commands:\n");
-  printf("  p: list processes being tracked\n");
-  printf("  s: Show the top 5 most interesting processes and users\n");
   printf("  q: Quit\n\n");
   printf("Author: Matthew W. Jones <mat@matburt.net>\n");
   printf("http://matburt.net/projects/procan\n");
