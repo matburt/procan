@@ -1,0 +1,71 @@
+# ProcAn Example Configuration file
+# Matthew W. Jones <mat@matburt.net>
+# 
+# Rename this file to procan.conf
+# and put it in either: /etc /usr/etc /usr/local/etc /usr/local/etc/procan
+#                          or ./
+# **NOTE** When excluding processes whatever you list will be treated as though
+# 	   There is a wildcard on the end.  For instance, if you listed 'irq' in your
+#	   list of excluded processes it would ignore any process that begins with 'irq'
+#	   Do not use double or single quotations when listing anything in here.
+
+#Exclude these uids
+excludeuids:
+#ex: excludeuids: 0 7 70 1002
+
+#Include these uids 
+#*NOTE* Doesn't work yet.
+#includeuids:
+#ex: includeuids: 1, 2, 5, 1001, 1003
+
+#Exclude these proc names (implies including all others)
+excludeprocs: 
+#ex: excludeprocs: procan cron gkrellm
+
+#The email address the user who will recieve notification
+#by the mail backend.
+adminemail:
+#ex: adminemail: root
+
+#The warn level of procs that are getting slightly abnormal
+#This will fire a warning email, log to syslog, trigger a script
+#depending on which backends are enabled.  This is a good default
+#The warn level tracks how often a process is listed as interesting
+#in a 1 hour span of time.
+warnlevel: 100
+#ex: warnlevel 100
+
+#The alarm level of procs that are getting maybe too interesting
+#This will fire an alarm email, log to syslog, trigger a script
+#depending on which backends are enabled. This is a good default
+#The alarm level tracks how often a process is listed as interesting
+#in a 1 hour span of time.
+alarmlevel: 200
+#ex: alarmlevel: 200
+
+#The frequency with which to mail status reports, in hours
+#(disabled if the mail backend isn't being used)
+mailfrequency: 24
+#ex: mailfrequency: 72
+
+#The frequency with which to log status reports to syslog, in hours
+#Will log as LOG_DAEMON using LOG_NOTICE (usually placed in /var/log/messages
+#or /var/log/daemon
+#(disabled if the syslog backend isn't being used)
+logfrequency: 12
+#ex: logfrequency: 2
+
+#Full path to script to execute during a warn event.
+#The PID, Command name, Score, and interest level are passed to the script
+warnscript:
+#ex: warnscript: /usr/local/bin/adjustresources.py
+
+#Full path to script to execute during an alarm event.
+#The PID, Command name, Score, and interest level are passed to the script
+alarmscript:
+#ex: alarmscript: /usr/local/bin/killthejerk.py
+
+#Full path to your sendmail compatible MTA
+#(Only useful if you are using the mail backend)
+mtapath: /usr/sbin/sendmail
+#ex: mtapath: /usr/sbin/sendmail
