@@ -68,7 +68,7 @@ procan_config* get_config()
 	{
 	  char *midptr = line;
 	  char *fptr = strsep(&midptr, ":");
-	  if (feof(cfile))
+	  if (midptr == NULL || feof(cfile))
 	    break;
 	  while (isspace(midptr[0]))
 	    midptr++;

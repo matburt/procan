@@ -95,8 +95,8 @@ int interactive_mode()
 
   update_panels();
   doupdate();
-  nodelay(proc_win, true);
-  nodelay(user_win, true);
+  nodelay(proc_win, TRUE);
+  nodelay(user_win, TRUE);
 
 
   int refreshcounter = 0;
