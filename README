@@ -17,17 +17,11 @@ Currently there are three primary modes: interactive mode (-i), daemon mode
 
 *Interactive Mode:
 While running procan in interactive mode it will not detach from the shell, 
-there are three commands that can be issued in interactive mode: 
-p -> By pushing p you will get a list of all of the processes that are 
-currently being tracked by procan. 
-s -> By pushing s you will get the top 5 most interesting processes 
-currently being tracked and the top 5 most interesting users.
-(There will be fewer if there are fewer than 5 interesting processes or users).  
-q -> By pushing q procan will shutdown its threads and quit.  While 
-using procan in interactive mode all backends (more on that in a minute) will 
-still be active the only difference is procan will not detatch from the shell 
-and will not respond to SIGTERM, but it will respond to SIGHUP (Re-read the 
-configuration file) and SIGUSR1 (Reset statistics).
+but instead will show a curses-style information display. By pushing q procan will 
+shutdown its threads and quit.  While using procan in interactive mode all 
+backends (more on that in a minute) will still be active the only difference is 
+procan will not detatch from the shell and will not respond to SIGTERM, but it will 
+respond to SIGHUP (Re-read the configuration file) and SIGUSR1 (Reset statistics).
 
 *Daemon Mode:
 Daemon mode will cause procan to detach from the shell and continue running in 
