@@ -113,7 +113,7 @@ int syslog_backend(procan_config *pc, struct timeval *schedtime)
 int mail_backend(procan_config *pc, struct timeval *schedtime)
 {
   int i;
-  FILE *mailpipe;
+  FILE *mailpipe=NULL;
 
   if (schedtime->tv_sec == 0)
     {
