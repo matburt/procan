@@ -90,7 +90,6 @@ void* collector_thread(void *a)
       if (!hangup)
 	sleep(1);
     }
-  printf("Collector Thread Exiting\n");
   return NULL;
 }
 

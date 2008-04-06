@@ -103,7 +103,6 @@ void* collector_thread(void *a)
 	  procsnap[i]._perc = kpptr->p_pctcpu;
 	  procsnap[i]._age = kpptr->p_ustart_sec;
 	  procsnap[i]._read = 0;
-	  //printf("%i -> %s\n",procsnap[i]._pid,procsnap[i]._command);
 	  kpptr++;
 	}
       if (kprocaccess != NULL)
@@ -116,7 +115,6 @@ void* collector_thread(void *a)
       if (!hangup)
 	sleep(1);
     }
-  printf("Collector Thread Exiting\n");
   return NULL;
 }
 

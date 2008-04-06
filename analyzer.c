@@ -239,11 +239,6 @@ void* analyzer_thread(void *a)
 
 	      if (procavs[foundhistory].intrest_score > procavs[foundhistory].interest_threshold)
 		{
-		  if (!scriptoutput)
-		    {
-		      fprintf(stdout, "%s looks intresting (score: %i).\n",procavs[foundhistory].command, 
-			     procavs[foundhistory].intrest_score);
-		    }
 		  procavs[foundhistory].ticks_interesting++;
 		  procavs[foundhistory].ticks_since_interesting = 0;
 		  procavs[foundhistory].num_intrests++;
@@ -260,11 +255,7 @@ void* analyzer_thread(void *a)
 		  procavs[foundhistory].ticks_since_interesting = 0;
 		}
 	      if (procavs[foundhistory].ticks_interesting > ADAPTIVE_THRESHOLD)
-		{
-		  procavs[foundhistory].interest_threshold = procavs[foundhistory].intrest_score + ADAPTIVE_THRESHOLD;
-		  if (!scriptoutput)
-		    printf("Adaptive threshold for %s increased.\n",procavs[foundhistory].command);
-		}
+		procavs[foundhistory].interest_threshold = procavs[foundhistory].intrest_score + ADAPTIVE_THRESHOLD;
 
 	      gettimeofday(an_time->_t,NULL);
 	      procavs[foundhistory].times_measured = procavs[foundhistory].times_measured + 1;
@@ -304,8 +295,6 @@ void* analyzer_thread(void *a)
       if (!hangup)
 	sleep(1);
     }
-  if (!scriptoutput)
-    printf("Analyzer Thread Exiting\n");
   free_config(pc);
   free(bes);
   free_times(an_time);
