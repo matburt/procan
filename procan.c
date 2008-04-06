@@ -304,7 +304,8 @@ void perform_housekeeping(long current)
   pthread_mutex_lock(&procchart_mutex);
   for (i = 0; i < numprocavs; i++)
     {
-      if ((current - procavs[i].last_interest_time) > 3600)
+      if (procavs[i].last_interest_time > 0 &&
+	  (current - procavs[i].last_interest_time) > 3600)
 	{
 	  if (procavs[i].intrest_score > 0)
 	    procavs[i].intrest_score = procavs[i].intrest_score / 2;
