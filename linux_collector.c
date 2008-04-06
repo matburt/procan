@@ -62,7 +62,14 @@ void* collector_thread(void *a)
       while((proc_info = readproc(proct,NULL)))
 	{
 	  if (procsnap[numprocsnap]._command == NULL)
-	    procsnap[numprocsnap]._command = (char*)malloc(20*sizeof(char));
+	    {
+	      procsnap[numprocsnap]._command = (char*)malloc(20*sizeof(char));
+	      if (procsnap[numprocsnap]._command == NULL)
+		{
+		  printf("Can not allocate memory.");
+		  exit(-1);
+		}
+	    }
 	  procsnap[numprocsnap]._pid = proc_info->tid;
 	  procsnap[numprocsnap]._uid = proc_info->ruid;
 	  strncpy(procsnap[numprocsnap]._command, proc_info->cmd, 20);

@@ -80,7 +80,7 @@ int syslog_backend(procan_config *pc, struct timeval *schedtime)
       if (!procavs[inds[i]].dwarned)
 	{
 	  syslog(LOG_NOTICE, "WARNING: %s has triggered a warning for being too interesting (%d)",
-		 procavs[inds[i]].command, procavs[inds[i]].hourly_intrests);
+		 procavs[inds[i]].command, procavs[inds[i]].intrest_score);
 	  procavs[inds[i]].dwarned = 1;
 	}
     }
@@ -94,7 +94,7 @@ int syslog_backend(procan_config *pc, struct timeval *schedtime)
       if (!procavs[inds[i]].dalarmed)
 	{
 	  syslog(LOG_ALERT, "ALERT: %s has triggered an alarm for being too interesting (%d)",
-		 procavs[inds[i]].command, procavs[inds[i]].hourly_intrests);
+		 procavs[inds[i]].command, procavs[inds[i]].intrest_score           );
 	  procavs[inds[i]].dalarmed = 1;
 	}
     }
@@ -179,8 +179,8 @@ int mail_backend(procan_config *pc, struct timeval *schedtime)
 	  fprintf(mailpipe, "From: %s\n", uname);
 	  fprintf(mailpipe, "Subject: Procan Warning\n");
 	  fprintf(mailpipe, "%s has been warned by ProcAn (%d)", 
-		  procavs[inds[i]].command, procavs[inds[i]].hourly_intrests);
-	  free(uname);
+		  procavs[inds[i]].command, procavs[inds[i]].intrest_score);
+	    free(uname);
 	  procavs[inds[i]].mwarned = 1;
 	}
     }
@@ -209,7 +209,7 @@ int mail_backend(procan_config *pc, struct timeval *schedtime)
 	  fprintf(mailpipe, "To: %s\n", pc->adminemail);
 	  fprintf(mailpipe, "Subject: Procan Alarm\n");
 	  fprintf(mailpipe, "%s has triggered an alarm condition (%d)", 
-		  procavs[inds[i]].command, procavs[inds[i]].hourly_intrests);
+		  procavs[inds[i]].command, procavs[inds[i]].intrest_score);
 	  free(uname);
 	  procavs[inds[i]].malarmed = 1;
 	}
@@ -253,8 +253,8 @@ int script_backend(procan_config *pc)
 		       procavs[inds[i]].lastpid,
 		       procavs[inds[i]].command,
 		       procavs[inds[i]].intrest_score,
-		       procavs[inds[i]].hourly_intrests);
-	      system(sargs);
+		       procavs[inds[i]].num_intrests);
+		system(sargs);
 	      free(sargs);
 	      _exit(1);
 	    }
@@ -294,7 +294,7 @@ int script_backend(procan_config *pc)
 		       procavs[inds[i]].lastpid,
 		       procavs[inds[i]].command,
 		       procavs[inds[i]].intrest_score,
-		       procavs[inds[i]].hourly_intrests);
+		       procavs[inds[i]].num_intrests);
 	      system(sargs);
 	      free(sargs);
 	      _exit(1);
@@ -321,7 +321,7 @@ int get_warns(int *indcs, procan_config *pc, int backendtype)
   int i;
   for (i = 0; i < numprocavs; i++)
     {
-      if (procavs[i].hourly_intrests > pc->warnlevel)
+      if (procavs[i].num_intrests > pc->warnlevel)
 	{
 	  switch (backendtype)
 	    {
@@ -358,7 +358,7 @@ int get_alarms(int *indcs, procan_config *pc, int backendtype)
   int i;
   for (i = 0; i < numprocavs; i++)
     {
-      if (procavs[i].hourly_intrests > pc->alarmlevel)
+      if (procavs[i].num_intrests > pc->alarmlevel)
 	{
 	  switch (backendtype)
 	    {
