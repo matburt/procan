@@ -319,6 +319,7 @@ void perform_housekeeping(long current)
 	  procavs[i].salarmed = 0;
 	  procavs[i].dwarned = 0;
 	  procavs[i].dalarmed = 0;
+	  procavs[i].last_interest_time = current;
 	}
     }
   pthread_mutex_unlock(&procchart_mutex);

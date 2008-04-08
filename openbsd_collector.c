@@ -84,11 +84,13 @@ void* collector_thread(void *a)
 	}
       numprocs = (int)(psize / sizeof(struct kinfo_proc2));      
       if (procsnap == NULL)
-	procsnap = (proc_statistics *) calloc(MAXPROCAVS, sizeof(proc_statistics));
-      if (procsnap == NULL)
 	{
-	  printf("Can not allocate memory.");
-	  exit(-1);
+	  procsnap = (proc_statistics *) calloc(MAXPROCAVS, sizeof(proc_statistics));
+	  if (procsnap == NULL)
+	    {
+	      printf("Can not allocate memory.");
+	      exit(-1);
+	    }
 	}
       numprocsnap = numprocs;
       for (i = 0; i < numprocs; i++)
