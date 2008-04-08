@@ -157,7 +157,7 @@ int interactive_mode()
           wrefresh(user_win); 
           
           pthread_mutex_unlock(&procchart_mutex);
-          refreshcounter = 5000;
+          refreshcounter = 800;
         }
       refreshcounter--;
       usleep(20);

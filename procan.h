@@ -47,6 +47,7 @@ typedef struct
   int uid;
   int lastpid;
   long last_measure_time;
+  long last_interest_time;
   int num_seen;
   int last_seen;
   int mov_percent;
@@ -59,7 +60,6 @@ typedef struct
   int intrest_score;
   int ticks_interesting;
   int ticks_since_interesting;
-  int hourly_intrests;
   int num_intrests;
   int mintrests;
   int pintrests;
@@ -90,6 +90,14 @@ typedef struct
   char *mtapath;
 }procan_config;
 
+typedef struct
+{
+  struct timeval *atimev;
+  struct timeval *_t;
+  struct timeval *syslog_time;
+  struct timeval *mail_time;
+}analyzer_times;
+
 /* Will analyze process data gathered by the collector
  * looking for 'interesting' processes and apply an adaptive threshold
  * to analyze the level of interest.
@@ -108,8 +116,14 @@ int get_statistics(int *mis, int *uis, int *numints);
 /* Will fetch a character array of statistics */
 char* get_statistics_str(void);
 
+/* Construct the analyzer time structure */
+void alloc_times(analyzer_times *at);
+
+/* Free the time structure */
+void free_times(analyzer_times *at);
+
 /* Perform hourly housekeeping */
-void perform_housekeeping(void);
+void perform_housekeeping(long current);
 
 /* Reset all proc averages */
 void reset_statistics(void);

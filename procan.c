@@ -298,19 +298,29 @@ int pipe_mode()
   Housekeeping is performed on all processes that are active.
   This includes resetting the hourly_intrests flag and warn and alarm flags
  */
-void perform_housekeeping()
+void perform_housekeeping(long current)
 {
   int i;
   pthread_mutex_lock(&procchart_mutex);
   for (i = 0; i < numprocavs; i++)
     {
-      procavs[i].hourly_intrests = 0;
-      procavs[i].mwarned = 0;
-      procavs[i].malarmed = 0;
-      procavs[i].swarned = 0;
-      procavs[i].salarmed = 0;
-      procavs[i].dwarned = 0;
-      procavs[i].dalarmed = 0;
+      if (procavs[i].last_interest_time > 0 &&
+	  (current - procavs[i].last_interest_time) > 3600)
+	{
+	  if (procavs[i].intrest_score > 0)
+	    procavs[i].intrest_score = procavs[i].intrest_score / 2;
+	  procavs[i].interest_threshold = DEFAULT_INTEREST_THRESHOLD;
+	  procavs[i].num_intrests = 0;
+	  procavs[i].mintrests = 0;
+	  procavs[i].pintrests = 0;
+	  procavs[i].mwarned = 0;
+	  procavs[i].malarmed = 0;
+	  procavs[i].swarned = 0;
+	  procavs[i].salarmed = 0;
+	  procavs[i].dwarned = 0;
+	  procavs[i].dalarmed = 0;
+	  procavs[i].last_interest_time = current;
+	}
     }
   pthread_mutex_unlock(&procchart_mutex);
 }
@@ -322,7 +332,6 @@ void reset_statistics()
   pthread_mutex_lock(&procchart_mutex);
   for (i = 0; i < numprocavs; i++)
     {
-      procavs[i].hourly_intrests = 0;
       procavs[i].mwarned = 0;
       procavs[i].malarmed = 0;
       procavs[i].swarned = 0;

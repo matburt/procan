@@ -24,7 +24,6 @@
  */
 
 /* ProcAn Analyzer
- * TODO:  Report hourly interests to pipe
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -65,6 +64,23 @@ void script_output(char *type, char *cmd, int lastpid, int movement, int score, 
   fflush(stdout);
 }
 
+void alloc_times(analyzer_times *at)
+{
+  at->atimev = (struct timeval *)calloc(1,sizeof(struct timeval));
+  at->_t = (struct timeval *)calloc(1,sizeof(struct timeval));
+  at->syslog_time = (struct timeval *)calloc(1,sizeof(struct timeval));
+  at->mail_time = (struct timeval *)calloc(1,sizeof(struct timeval));
+}
+
+void free_times(analyzer_times *at)
+{
+  free(at->atimev);
+  free(at->_t);
+  free(at->syslog_time);
+  free(at->mail_time);
+  free(at);
+}
+
 /* Will analyze process data gathered by the collector
  * looking for 'interesting' processes and apply an adaptive threshold
  * to analyze the level of interest.
@@ -73,17 +89,12 @@ void* analyzer_thread(void *a)
 {
   int hangup=0;
   int i,j= 0;
-  struct timeval *atimev = (struct timeval *)malloc(sizeof(struct timeval));
-  struct timeval *_t = (struct timeval *)malloc(sizeof(struct timeval));
-  struct timeval *syslog_time = (struct timeval *)calloc(1,sizeof(struct timeval));
-  struct timeval *mail_time = (struct timeval *)calloc(1,sizeof(struct timeval));
-  struct timeval *housekeeping_time = (struct timeval *)malloc(sizeof(struct timeval));
-  gettimeofday(housekeeping_time, NULL);
-  housekeeping_time->tv_sec = housekeeping_time->tv_sec + 3600; /* 1 hour */
+  analyzer_times *an_time = (analyzer_times *)malloc(sizeof(analyzer_times));
+  alloc_times(an_time);
 
   while (!hangup)  /* Thread Run Loop */
     {
-      gettimeofday(atimev,NULL);
+      gettimeofday(an_time->atimev,NULL);
       pthread_mutex_lock(&procsnap_mutex);
       for (i = 0; i < numprocsnap; i++)
 	{
@@ -116,7 +127,7 @@ void* analyzer_thread(void *a)
 	      int k;
 	      for (k = 0; k < numprocavs; k++)
 		{
-		  if (procavs[k].last_measure_time < (atimev->tv_sec - 30))
+		  if (procavs[k].last_measure_time < (an_time->atimev->tv_sec - 30))
 		    {
 		      uuslot = k;
 		      break;
@@ -134,8 +145,9 @@ void* analyzer_thread(void *a)
 	      strncpy(procavs[uuslot].command, procsnap[i]._command, 25);
 	      procavs[uuslot].lastpid = procsnap[i]._pid;
 	      procavs[uuslot].uid = procsnap[i]._uid;
-	      gettimeofday(_t, NULL);
-	      procavs[uuslot].last_measure_time = _t->tv_sec;
+	      gettimeofday(an_time->_t, NULL);
+	      procavs[uuslot].last_measure_time = an_time->_t->tv_sec;
+	      procavs[uuslot].last_interest_time = an_time->_t->tv_sec;
 	      procavs[uuslot].num_seen = 1;
 	      procavs[uuslot].mov_percent = 0;
 	      procavs[uuslot].last_percent = procsnap[i]._perc;
@@ -149,7 +161,6 @@ void* analyzer_thread(void *a)
 	      procavs[uuslot].intrest_score = 0;
 	      procavs[uuslot].interest_threshold = DEFAULT_INTEREST_THRESHOLD;
 	      procavs[uuslot].num_intrests = 0;
-	      procavs[uuslot].hourly_intrests = 0;
 	      procavs[uuslot].mintrests = 0;
 	      procavs[uuslot].pintrests = 0;
 	      procavs[uuslot].dwarned = 0;
@@ -228,15 +239,9 @@ void* analyzer_thread(void *a)
 
 	      if (procavs[foundhistory].intrest_score > procavs[foundhistory].interest_threshold)
 		{
-		  if (!scriptoutput)
-		    {
-		      fprintf(stdout, "%s looks intresting (score: %i).\n",procavs[foundhistory].command, 
-			     procavs[foundhistory].intrest_score);
-		    }
 		  procavs[foundhistory].ticks_interesting++;
 		  procavs[foundhistory].ticks_since_interesting = 0;
 		  procavs[foundhistory].num_intrests++;
-		  procavs[foundhistory].hourly_intrests++;
 		}
 	      else
 		{
@@ -250,15 +255,11 @@ void* analyzer_thread(void *a)
 		  procavs[foundhistory].ticks_since_interesting = 0;
 		}
 	      if (procavs[foundhistory].ticks_interesting > ADAPTIVE_THRESHOLD)
-		{
-		  procavs[foundhistory].interest_threshold = procavs[foundhistory].intrest_score + ADAPTIVE_THRESHOLD;
-		  if (!scriptoutput)
-		    printf("Adaptive threshold for %s increased.\n",procavs[foundhistory].command);
-		}
+		procavs[foundhistory].interest_threshold = procavs[foundhistory].intrest_score + ADAPTIVE_THRESHOLD;
 
-	      gettimeofday(_t,NULL);
+	      gettimeofday(an_time->_t,NULL);
 	      procavs[foundhistory].times_measured = procavs[foundhistory].times_measured + 1;
-	      procavs[foundhistory].last_measure_time = _t->tv_sec;
+	      procavs[foundhistory].last_measure_time = an_time->_t->tv_sec;
 	    }
 	  
 	  pthread_mutex_unlock(&procchart_mutex);
@@ -270,11 +271,11 @@ void* analyzer_thread(void *a)
 	  switch (bes[i])
 	    {
 	    case SYSLOG_BACKEND:
-	      if (syslog_backend(pc, syslog_time) == BACKEND_ERROR)
+	      if (syslog_backend(pc, an_time->syslog_time) == BACKEND_ERROR)
 		bes[i] = 0;
 	      break;
 	    case MAIL_BACKEND:
-	      if (mail_backend(pc, mail_time) == BACKEND_ERROR)
+	      if (mail_backend(pc, an_time->mail_time) == BACKEND_ERROR)
 		bes[i] = 0;
 	      break;
 	    case SCRIPT_BACKEND:
@@ -290,21 +291,12 @@ void* analyzer_thread(void *a)
       if(m_hangup)
 	hangup=1;
       pthread_mutex_unlock(&hangup_mutex);
-      if (atimev->tv_sec >= housekeeping_time->tv_sec) /* Perform hourly housekeeping */
-	{
-	  perform_housekeeping();
-	  housekeeping_time->tv_sec = atimev->tv_sec + 3600;
-	}
+      perform_housekeeping(an_time->_t->tv_sec);
       if (!hangup)
 	sleep(1);
     }
-  if (!scriptoutput)
-    printf("Analyzer Thread Exiting\n");
   free_config(pc);
   free(bes);
-  free(atimev);
-  free(_t);
-  free(syslog_time);
-  free(mail_time);
+  free_times(an_time);
   return NULL;
 }

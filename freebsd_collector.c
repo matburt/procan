@@ -60,12 +60,11 @@ void* collector_thread(void *a)
   /* Initialize access to the KVM Interface */
     if ((kaccess = kvm_openfiles(_PATH_DEVNULL,_PATH_DEVNULL,NULL,O_RDONLY, ebuffer)) == NULL)
     {
-      fprintf(stderr, "kvm error:%s\n", ebuffer);
+      fprintf(stderr, "kvm error: %s\n", ebuffer);
       exit(-1);
     }
   while (!hangup)    /* Thread run loop */
     {
-      //pthread_mutex_lock(&procsnap_mutex);
       if ((kprocaccess = kvm_getprocs(kaccess, KERN_PROC_ALL, 
 				      (int)getuid(), &numprocs)) == NULL)
 	{
@@ -74,11 +73,13 @@ void* collector_thread(void *a)
 	}
       
       if (procsnap == NULL)
-	procsnap = (proc_statistics *) calloc(MAXPROCAVS, sizeof(proc_statistics));
-      if (procsnap == NULL)
 	{
-	  printf("Can not allocate memory.");
-	  exit(-1);
+	  procsnap = (proc_statistics *) calloc(MAXPROCAVS, sizeof(proc_statistics));
+	  if (procsnap == NULL)
+	    {
+	      printf("Can not allocate memory.");
+	      exit(-1);
+	    }
 	}
       numprocsnap = numprocs;
       for (i = 0; i < numprocs; i++)
@@ -105,7 +106,6 @@ void* collector_thread(void *a)
 	  pthread_mutex_lock(&procsnap_mutex);
 	}
     }
-  printf("Collector Thread Exiting\n");
   kvm_close(kaccess);
   return NULL;
 }

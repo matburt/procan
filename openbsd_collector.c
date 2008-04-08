@@ -84,11 +84,13 @@ void* collector_thread(void *a)
 	}
       numprocs = (int)(psize / sizeof(struct kinfo_proc2));      
       if (procsnap == NULL)
-	procsnap = (proc_statistics *) calloc(MAXPROCAVS, sizeof(proc_statistics));
-      if (procsnap == NULL)
 	{
-	  printf("Can not allocate memory.");
-	  exit(-1);
+	  procsnap = (proc_statistics *) calloc(MAXPROCAVS, sizeof(proc_statistics));
+	  if (procsnap == NULL)
+	    {
+	      printf("Can not allocate memory.");
+	      exit(-1);
+	    }
 	}
       numprocsnap = numprocs;
       for (i = 0; i < numprocs; i++)
@@ -103,7 +105,6 @@ void* collector_thread(void *a)
 	  procsnap[i]._perc = kpptr->p_pctcpu;
 	  procsnap[i]._age = kpptr->p_ustart_sec;
 	  procsnap[i]._read = 0;
-	  //printf("%i -> %s\n",procsnap[i]._pid,procsnap[i]._command);
 	  kpptr++;
 	}
       if (kprocaccess != NULL)
@@ -116,7 +117,6 @@ void* collector_thread(void *a)
       if (!hangup)
 	sleep(1);
     }
-  printf("Collector Thread Exiting\n");
   return NULL;
 }
 

@@ -52,17 +52,26 @@ void* collector_thread(void *a)
       pthread_mutex_lock(&procsnap_mutex);
       proct = openproc(PROC_FILLARG | PROC_FILLSTAT | PROC_FILLSTATUS);//PROC_FILLMEM | PROC_FILLSTATUS | PROC_FILLSTAT | PROC_FILLARG);
       if (procsnap == NULL)
-	procsnap = (proc_statistics *) calloc(MAXPROCAVS, sizeof(proc_statistics));
-      if (procsnap == NULL)
 	{
-	  printf("Can not allocate memory.");
-	  exit(-1);
+	  procsnap = (proc_statistics *) calloc(MAXPROCAVS, sizeof(proc_statistics));
+	  if (procsnap == NULL)
+	    {
+	      printf("Can not allocate memory.");
+	      exit(-1);
+	    }
 	}
       numprocsnap = 0;
       while((proc_info = readproc(proct,NULL)))
 	{
 	  if (procsnap[numprocsnap]._command == NULL)
-	    procsnap[numprocsnap]._command = (char*)malloc(20*sizeof(char));
+	    {
+	      procsnap[numprocsnap]._command = (char*)malloc(20*sizeof(char));
+	      if (procsnap[numprocsnap]._command == NULL)
+		{
+		  printf("Can not allocate memory.");
+		  exit(-1);
+		}
+	    }
 	  procsnap[numprocsnap]._pid = proc_info->tid;
 	  procsnap[numprocsnap]._uid = proc_info->ruid;
 	  strncpy(procsnap[numprocsnap]._command, proc_info->cmd, 20);
@@ -83,7 +92,6 @@ void* collector_thread(void *a)
       if (!hangup)
 	sleep(1);
     }
-  printf("Collector Thread Exiting\n");
   return NULL;
 }
 
