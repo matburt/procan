@@ -309,8 +309,10 @@ void perform_housekeeping(long current)
 	{
 	  if (procavs[i].intrest_score > 0)
 	    procavs[i].intrest_score = procavs[i].intrest_score / 2;
-	  procavs[i].interest_threshold = DEFAULT_INTEREST_THRESHOLD;
+	  if (procavs[i].num_intrests > 0)
+	    procavs[i].num_intrests = procavs[i].num_intrests / 2;
 	  procavs[i].num_intrests = 0;
+	  procavs[i].interest_threshold = DEFAULT_INTEREST_THRESHOLD;
 	  procavs[i].mintrests = 0;
 	  procavs[i].pintrests = 0;
 	  procavs[i].mwarned = 0;
