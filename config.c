@@ -36,24 +36,30 @@
 procan_config* get_config()
 {
   FILE *cfile;
-  if ((cfile = fopen("/etc/procan.conf", "r")) == NULL)
+  char *cfiles[8];
+  int cfcount = 0;
+  cfiles[++cfcount] = "/etc/procan.conf";
+  cfiles[++cfcount] = "/etc/procan/procan.conf";
+  cfiles[++cfcount] = "/usr/etc/procan.conf";
+  cfiles[++cfcount] = "/usr/etc/procan/procan.conf";
+  cfiles[++cfcount] = "/usr/local/etc/procan.conf";
+  cfiles[++cfcount] = "/usr/local/etc/procan/procan.conf";
+  cfiles[++cfcount] = "~/.procan.conf";
+  cfiles[++cfcount] = "./procan.conf";
+  int index_ = 0;
+  printf("cfcount is %d.\n", cfcount);
+  while (((cfile = fopen(cfiles[index_], "r")) == NULL) & (index_ < cfcount))
     {
-      if ((cfile = fopen("/usr/etc/procan.conf", "r")) == NULL)
+      index_++;
+      if (index_ >= cfcount)
 	{
-	  if ((cfile = fopen("/usr/local/etc/procan.conf", "r")) == NULL)
-	    {
-	      if ((cfile = fopen("/usr/local/etc/procan/procan.conf", "r")) == NULL)
-		{
-		  if ((cfile = fopen("./procan.conf", "r")) == NULL)
-		    {
-		      printf("Configuration File Not Found.\n");
-		      exit(-1);
-		    }
-		}
-	    }
-	}
+	  printf("Configuration File Not Found.\n");
+	  exit(-1);
+	}    
     }
-
+  /*printf("index is %d\n", index_);
+  printf("using file %s\n", cfiles[index_]);
+  */
   procan_config *pc = (procan_config *)calloc(1, sizeof(procan_config));
   while (!feof(cfile))
     {
