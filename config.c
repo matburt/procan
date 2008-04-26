@@ -1,7 +1,8 @@
 /* Copyright (c) 2007, Matthew W. Jones
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * Redistribution and use in source and binary forms, with or without 
+ * modification, are permitted provided that the following conditions are met:
  *
  * * Redistributions of source code must retain the above copyright notice, 
  *   this list of conditions and the following disclaimer.
@@ -36,28 +37,20 @@
 procan_config* get_config()
 {
   FILE *cfile;
-  char *cfiles[8];
-  int cfcount = 0;
-  cfiles[++cfcount] = "/etc/procan.conf";
-  cfiles[++cfcount] = "/etc/procan/procan.conf";
-  cfiles[++cfcount] = "/usr/etc/procan.conf";
-  cfiles[++cfcount] = "/usr/etc/procan/procan.conf";
-  cfiles[++cfcount] = "/usr/local/etc/procan.conf";
-  cfiles[++cfcount] = "/usr/local/etc/procan/procan.conf";
-  cfiles[++cfcount] = "~/.procan.conf";
-  cfiles[++cfcount] = "./procan.conf";
+  char *cfiles[8] = {"/etc/procan.conf", "/etc/procan/procan.conf",
+		     "/usr/etc/procan.conf","/usr/etc/procan/procan.conf",
+		     "/usr/local/etc/procan.conf","~/.procan.conf"
+		     "/usr/local/etc/procan/procan.conf", "./procan.conf"};
   int index_ = 0;
-
-  while (((cfile = fopen(cfiles[index_], "r")) == NULL) & (index_ < cfcount))
+  while (((cfile = fopen(cfiles[index_], "r")) == NULL) && (index_ < 8))
+    index_++;
+  
+  if (!cfile)
     {
-      index_++;
-      if (index_ >= cfcount)
-	{
-	  printf("Configuration File Not Found.\n");
-	  exit(-1);
-	}    
+      printf("Configuration file not found.\n");
+      exit(-1);
     }
-
+  
   procan_config *pc = (procan_config *)calloc(1, sizeof(procan_config));
   while (!feof(cfile))
     {
