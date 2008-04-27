@@ -123,7 +123,7 @@ void alloc_times(analyzer_times *at);
 void free_times(analyzer_times *at);
 
 /* Modify a single proc_averages instance interest value */
-void modify_interest(proc_averages pav, const char *type, int change);
+void modify_interest(proc_averages pav, char *type, int change);
 
 /* Perform hourly housekeeping */
 void perform_housekeeping(long current);
