@@ -390,7 +390,7 @@ int daemon_mode()
   umask(027);
   chdir("/");
 
-  /* The 2 signals we watch for, and ignore the return value of children */  
+  /* The 3 signals we watch for, and ignore the return value of children */  
   signal(SIGCHLD, SIG_IGN);
   signal(SIGHUP, handle_sig);
   signal(SIGTERM, handle_sig);
@@ -457,20 +457,17 @@ void handle_sig(int sig)
   switch(sig)
     {
     case SIGHUP:
-      printf("Re-reading configuration...\n");
       pthread_mutex_lock(&pconfig_mutex);
       free_config(pc);
       pc = get_config();
       pthread_mutex_unlock(&pconfig_mutex);
       break;
     case SIGTERM:
-      printf("Shutting Down ProcAn\n");
       pthread_mutex_lock(&hangup_mutex);
       m_hangup=1;
       pthread_mutex_unlock(&hangup_mutex);
       break;
     case SIGUSR1:
-      printf("Resetting statistics\n");
       reset_statistics();
       break;
     }
