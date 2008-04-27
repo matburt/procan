@@ -144,6 +144,13 @@ void* analyzer_thread(void *a)
 	  if (procsnap[i]._command == NULL )
             continue;
 	  pthread_mutex_lock(&procchart_mutex);
+
+	  if (should_ignore_proc(procsnap[i]._command) 
+	      || should_ignore_uid(procsnap[i]._uid))
+	    {
+	      pthread_mutex_unlock(&procchart_mutex);
+	      continue;
+	    }
 	  if (procavs == NULL)
 	    procavs = (proc_averages *) calloc(MAXPROCAVS, sizeof(proc_averages));
 	  
@@ -159,15 +166,8 @@ void* analyzer_thread(void *a)
 	    }
 	  if (foundhistory == -1) /* If it's not found, pick an unused slot */
 	    {
-	      if (should_ignore_proc(procsnap[i]._command) 
-		  || should_ignore_uid(procsnap[i]._uid))
-		{
-		  pthread_mutex_unlock(&procchart_mutex);
-		  continue;
-		}
-
               int uuslot = get_unused_slot(an_time->atimev);
-              if (uuslot == -1) //this usually means we are full.
+              if (uuslot == -1) //this usually means we are full, which really needs to be fixed.
                 continue;
 
 	      if (procavs[uuslot].command == NULL)   /* Create an entry for it */
@@ -219,6 +219,7 @@ void* analyzer_thread(void *a)
 	      procavs[foundhistory].last_percent = procsnap[i]._perc;
 	      procavs[foundhistory].avg_size_gain = procsnap[i]._size - procavs[foundhistory].last_size;
 	      procavs[foundhistory].last_size = procsnap[i]._size;
+
 	      if (procavs[foundhistory].avg_size_gain > 0)
 		modify_interest(procavs[foundhistory], "mem", 1);
 
