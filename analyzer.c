@@ -64,6 +64,34 @@ void script_output(char *type, char *cmd, int lastpid, int movement, int score, 
   fflush(stdout);
 }
 
+/* Locate a free slot in the procavs list.
+ * it can do this by picking the first slot whose process
+ * has expired or by picking the first unused slot.
+ *
+ * By using this mechanism we are able to reuse memory for
+ * new processes.
+ */
+int get_unused_slot(struct timeval *atimev)
+{
+  int uuslot = -1;
+  int k;
+  for (k = 0; k < numprocavs; k++)
+    {
+      if (procavs[k].last_measure_time < (atimev->tv_sec - 30))
+        {
+          uuslot = k;
+          break;
+        }
+    }
+  
+  if (uuslot == -1 && numprocavs < MAXPROCAVS)
+    {
+      uuslot = numprocavs;
+      numprocavs++;
+    }
+  return uuslot;
+}
+
 void alloc_times(analyzer_times *at)
 {
   at->atimev = (struct timeval *)calloc(1,sizeof(struct timeval));
@@ -123,23 +151,11 @@ void* analyzer_thread(void *a)
 		  pthread_mutex_unlock(&procchart_mutex);
 		  continue;
 		}
-	      int uuslot = -1;
-	      int k;
-	      for (k = 0; k < numprocavs; k++)
-		{
-		  if (procavs[k].last_measure_time < (an_time->atimev->tv_sec - 30))
-		    {
-		      uuslot = k;
-		      break;
-		    }
-		}
-	      if (uuslot == -1)
-		{
-		  uuslot = numprocavs;
-		  k = 0;
-		}
-	      else
-		k = 1;
+
+              int uuslot = get_unused_slot(an_time->atimev);
+              if (uuslot == -1) //this usually means we are full.
+                continue;
+
 	      if (procavs[uuslot].command == NULL)   /* Create an entry for it */
 		procavs[uuslot].command = calloc(25, sizeof(char));
 	      strncpy(procavs[uuslot].command, procsnap[i]._command, 25);
@@ -169,8 +185,6 @@ void* analyzer_thread(void *a)
 	      procavs[uuslot].malarmed = 0;
 	      procavs[uuslot].swarned = 0;
 	      procavs[uuslot].salarmed = 0;
-	      if (k == 0 && numprocavs <= MAXPROCAVS) 
-		numprocavs++;
 	    }
 	  else   /* This means we found the history, now we begin the analysis */
 	    {  
