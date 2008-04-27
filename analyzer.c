@@ -84,6 +84,8 @@ int get_unused_slot(struct timeval *atimev)
         }
     }
   
+  //MAXPROCAVS should be more of an interval for growing
+  //the numprocavs space instead of an upper limit.
   if (uuslot == -1 && numprocavs < MAXPROCAVS)
     {
       uuslot = numprocavs;
@@ -107,6 +109,18 @@ void free_times(analyzer_times *at)
   free(at->syslog_time);
   free(at->mail_time);
   free(at);
+}
+
+/* Modify a single proc_averages instance based on a change in score
+ * if we are using script output this will also notify. Any other notification
+ * that needs to be done in the future should be done here.
+ */
+void modify_interest(proc_averages pav, const char *type, int change)
+{
+  pav.intrest_score = pav.intrest_score + change;
+  pav.mintrests++;
+  if (scriptoutput)
+    script_output(type, pav.command, pav.lastpid, change, pav.intrest_score, pav.num_intrests);
 }
 
 /* Will analyze process data gathered by the collector
@@ -198,12 +212,7 @@ void* analyzer_thread(void *a)
 		}
 	      if (procavs[foundhistory].mov_percent >= 5) 
 		{
-		  procavs[foundhistory].intrest_score = procavs[foundhistory].intrest_score + 5;
-		  if (scriptoutput)
-		    script_output("proc", procavs[foundhistory].command,
-				  procavs[foundhistory].lastpid,
-				  5, procavs[foundhistory].intrest_score,
-				  procavs[foundhistory].num_intrests);
+		  modify_interest(procavs[foundhistory],"proc",5);
 		  procavs[foundhistory].pintrests++;
 		  procavs[foundhistory].mov_percent = 0;
 		}
@@ -211,46 +220,20 @@ void* analyzer_thread(void *a)
 	      procavs[foundhistory].avg_size_gain = procsnap[i]._size - procavs[foundhistory].last_size;
 	      procavs[foundhistory].last_size = procsnap[i]._size;
 	      if (procavs[foundhistory].avg_size_gain > 0)
-		{
-		  procavs[foundhistory].intrest_score = procavs[foundhistory].intrest_score + 1;
-		  procavs[foundhistory].mintrests++;
-		  if (scriptoutput)
-		    script_output("mem", procavs[foundhistory].command,
-				  procavs[foundhistory].lastpid,
-				  1, procavs[foundhistory].intrest_score,
-				  procavs[foundhistory].num_intrests);
-		}
+		modify_interest(procavs[foundhistory], "mem", 1);
+
 	      if (procavs[foundhistory].avg_size_gain < 0)
-		{
-		  procavs[foundhistory].intrest_score = procavs[foundhistory].intrest_score - 1;
-		  if (scriptoutput)
-		    script_output("mem", procavs[foundhistory].command,
-				  procavs[foundhistory].lastpid,
-				  -1, procavs[foundhistory].intrest_score,
-				  procavs[foundhistory].num_intrests);
-		}
+		modify_interest(procavs[foundhistory],"mem",-1);
+
 	      procavs[foundhistory].avg_rssize_gain = procsnap[i]._rssize - procavs[foundhistory].last_rssize;
 	      procavs[foundhistory].last_rssize = procsnap[i]._rssize;
 	      if (procavs[foundhistory].avg_rssize_gain > 0)
-		{
-		  procavs[foundhistory].intrest_score = procavs[foundhistory].intrest_score + 1;
-		  procavs[foundhistory].mintrests++;
-		  if (scriptoutput)
-		    script_output("rss", procavs[foundhistory].command,
-				  procavs[foundhistory].lastpid,
-				  1, procavs[foundhistory].intrest_score,
-				  procavs[foundhistory].num_intrests);
-		}
-	      if (procavs[foundhistory].avg_rssize_gain < 0)
-		{
-		  procavs[foundhistory].intrest_score = procavs[foundhistory].intrest_score - 1;
-		  if (scriptoutput)
-		    script_output("rss", procavs[foundhistory].command,
-				  procavs[foundhistory].lastpid,
-				  -1, procavs[foundhistory].intrest_score,
-				  procavs[foundhistory].num_intrests);
-		}
+		modify_interest(procavs[foundhistory],"rss",1);
 
+	      if (procavs[foundhistory].avg_rssize_gain < 0)
+		modify_interest(procavs[foundhistory],"rss",-1);
+
+	      //some interest calculations related to state changing
 	      if (procavs[foundhistory].intrest_score > procavs[foundhistory].interest_threshold)
 		{
 		  procavs[foundhistory].ticks_interesting++;
