@@ -115,7 +115,7 @@ void free_times(analyzer_times *at)
  * if we are using script output this will also notify. Any other notification
  * that needs to be done in the future should be done here.
  */
-void modify_interest(proc_averages pav, const char *type, int change)
+void modify_interest(proc_averages pav, char *type, int change)
 {
   pav.intrest_score = pav.intrest_score + change;
   pav.mintrests++;
