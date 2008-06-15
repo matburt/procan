@@ -101,21 +101,21 @@ int get_statistics(int *mis, int *uis, int *numints)
 	  numids++;
 	}
     }
-  for (i = (numids-1); i >= 0; i--)
+
+  for (i = 0; i < numids; i++)
     {
-      for (j = 1; j <= i; j++)
+      for (j = 0; j < numids; j++)
 	{
-	  if (numints[j-1] > numints[j])
+	  if (numints[j] > numints[j-1])
 	    {
-	      holder = numints[j-1];
-	      numints[j-1] = numints[j];
-	      numints[j] = holder;
-	      holder = uis[j-1];
-	      uis[j-1] = uis[j];
-	      uis[j] = holder;		
+	      holder = numints[j];
+	      numints[j] = numints[j-1];
+	      numints[j-1] = holder;
+	      holder = uis[j];
+	      uis[j] = uis[j-1];
+	      uis[j-1] = holder;
 	    }
 	}
-      
     }
   
   for (i = 1; i < numprocavs; i++)

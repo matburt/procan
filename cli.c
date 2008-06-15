@@ -52,7 +52,7 @@ int interactive_mode()
   PANEL *userpanel;
 
   pthread_t *threads;
-  char *procline = (char *)malloc(100*sizeof(*procline));;
+  char procline[100];
   int i,e, inp;
   int startx, starty, width, height;
   
@@ -116,9 +116,9 @@ int interactive_mode()
           mvwaddstr(user_win, 1, 1, "Active Users:");
           mvwaddstr(proc_win, 2, 1, "command | lpid | cpu |  rssz  | cpugn | szgn | rsszgn | I | #I");
 
-          int *mis = (int *)malloc(numprocavs*sizeof(int));
-          int *uis = (int *)malloc(numprocavs*sizeof(int));
-          int *numints = (int *)malloc(numprocavs*sizeof(int));
+          int mis[numprocavs];
+          int uis[numprocavs];
+          int numints[numprocavs];
 
           int numids = get_statistics(mis, uis, numints);
 
@@ -147,17 +147,13 @@ int interactive_mode()
               mvwaddstr(user_win, (i+2), 1, procline);
             }
 
-          free(mis);
-          free(uis);
-          free(numints);
-          
           box(proc_win, 0, 0);
           box(user_win, 0, 0);
           wrefresh(proc_win); 
           wrefresh(user_win); 
           
           pthread_mutex_unlock(&procchart_mutex);
-          refreshcounter = 100;
+          refreshcounter = 200;
         }
       refreshcounter--;
       usleep(20);
@@ -175,7 +171,7 @@ int interactive_mode()
   pthread_mutex_destroy(&procchart_mutex);
   pthread_mutex_destroy(&pconfig_mutex);
   free(threads);
-  free(procline);
+
 #if defined (linux)
   for (i = 0; i < numprocsnap; i++)
     {
