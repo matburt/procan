@@ -118,17 +118,25 @@ int get_statistics(int *mis, int *uis, int *numints)
       
     }
   
-  for (i = (numprocavs-1); i >= 0; i--)
+  for (i = 1; i < numprocavs; i++)
     {
-      for (j = 1; j <= i; j++)
+      for (j = 1; j < numprocavs; j++)
 	{
-	  if (procavs[mis[j-1]].num_intrests < procavs[mis[j]].num_intrests)
+	  if ((procavs[mis[j]].intrest_score > procavs[mis[j-1]].intrest_score ||
+	       procavs[mis[j]].num_intrests > procavs[mis[j-1]].num_intrests) ||
+	      (procavs[mis[j]].last_rssize > procavs[mis[j-1]].last_rssize ||
+	       procavs[mis[j]].last_size > procavs[mis[j-1]].last_size ||
+	       procavs[mis[j]].last_percent > procavs[mis[j-1]].last_percent))
 	    {
-	      holder = mis[j-1];
-	      mis[j-1] = mis[j];
-	      mis[j] = holder;
+	      holder = mis[j];
+	      mis[j] = mis[j-1];
+	      mis[j-1] = holder;
 	    }
 	}
+    }
+  for (i = 0; i < numprocavs; i++)
+    {
+      printf("%i\n",mis[i]);
     }
   return numids;
 }

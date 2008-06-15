@@ -92,10 +92,10 @@ typedef struct
 
 typedef struct
 {
-  struct timeval *atimev;
-  struct timeval *_t;
-  struct timeval *syslog_time;
-  struct timeval *mail_time;
+  struct timeval atimev;
+  struct timeval _t;
+  struct timeval syslog_time;
+  struct timeval mail_time;
 }analyzer_times;
 
 /* Will analyze process data gathered by the collector
@@ -115,12 +115,6 @@ int get_statistics(int *mis, int *uis, int *numints);
 
 /* Will fetch a character array of statistics */
 char* get_statistics_str(void);
-
-/* Construct the analyzer time structure */
-void alloc_times(analyzer_times *at);
-
-/* Free the time structure */
-void free_times(analyzer_times *at);
 
 /* Modify a single proc_averages instance interest value */
 void modify_interest(proc_averages pav, char *type, int change);
