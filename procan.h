@@ -117,7 +117,10 @@ int get_statistics(int *mis, int *uis, int *numints);
 char* get_statistics_str(void);
 
 /* Modify a single proc_averages instance interest value */
-void modify_interest(proc_averages pav, char *type, int change);
+void modify_interest(proc_averages *pav, char *type, int change);
+
+/* Initialize a proc averages slot */
+void initialize_slot(proc_averages *pav, proc_statistics *pc, long curtime);
 
 /* Perform hourly housekeeping */
 void perform_housekeeping(long current);

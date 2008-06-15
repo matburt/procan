@@ -98,12 +98,44 @@ int get_unused_slot(struct timeval atimev)
  * if we are using script output this will also notify. Any other notification
  * that needs to be done in the future should be done here.
  */
-void modify_interest(proc_averages pav, char *type, int change)
+void modify_interest(proc_averages *pav, char *type, int change)
 {
-  pav.intrest_score = pav.intrest_score + change;
-  pav.mintrests++;
+  pav->intrest_score = pav->intrest_score + change;
+  pav->mintrests++;
   if (scriptoutput)
-    script_output(type, pav.command, pav.lastpid, change, pav.intrest_score, pav.num_intrests);
+    script_output(type, pav->command, pav->lastpid, change, pav->intrest_score, pav->num_intrests);
+}
+
+void initialize_slot(proc_averages *pav, proc_statistics *pc, long curtime)
+{
+  if (pav->command == NULL)   /* Create an entry for it */
+    pav->command = malloc(25*sizeof(char));
+  strncpy(pav->command, pc->_command, 25);
+  pav->lastpid = pc->_pid;
+  pav->uid = pc->_uid;
+  pav->last_measure_time = curtime;
+  pav->last_interest_time = curtime;
+  pav->num_seen = 1;
+  pav->mov_percent = 0;
+  pav->last_percent = pc->_perc;
+  pav->avg_size_gain = 0;
+  pav->last_size = pc->_size;
+  pav->avg_rssize_gain = 0;
+  pav->last_rssize = pc->_rssize;
+  pav->times_measured = 1;
+  pav->ticks_interesting = 0;
+  pav->ticks_since_interesting = 0;
+  pav->intrest_score = 0;
+  pav->interest_threshold = DEFAULT_INTEREST_THRESHOLD;
+  pav->num_intrests = 0;
+  pav->mintrests = 0;
+  pav->pintrests = 0;
+  pav->dwarned = 0;
+  pav->dalarmed = 0;
+  pav->mwarned = 0;
+  pav->malarmed = 0;
+  pav->swarned = 0;
+  pav->salarmed = 0;
 }
 
 /* Will analyze process data gathered by the collector
@@ -152,34 +184,7 @@ void* analyzer_thread(void *a)
 
 	      gettimeofday(&an_time._t, NULL);
 
-	      if (procavs[uuslot].command == NULL)   /* Create an entry for it */
-		procavs[uuslot].command = malloc(25*sizeof(char));
-	      strncpy(procavs[uuslot].command, procsnap[i]._command, 25);
-	      procavs[uuslot].lastpid = procsnap[i]._pid;
-	      procavs[uuslot].uid = procsnap[i]._uid;
-	      procavs[uuslot].last_measure_time = an_time._t.tv_sec;
-	      procavs[uuslot].last_interest_time = an_time._t.tv_sec;
-	      procavs[uuslot].num_seen = 1;
-	      procavs[uuslot].mov_percent = 0;
-	      procavs[uuslot].last_percent = procsnap[i]._perc;
-	      procavs[uuslot].avg_size_gain = 0;
-	      procavs[uuslot].last_size = procsnap[i]._size;
-	      procavs[uuslot].avg_rssize_gain = 0;
-	      procavs[uuslot].last_rssize = procsnap[i]._rssize;
-	      procavs[uuslot].times_measured = 1;
-	      procavs[uuslot].ticks_interesting = 0;
-	      procavs[uuslot].ticks_since_interesting = 0;
-	      procavs[uuslot].intrest_score = 0;
-	      procavs[uuslot].interest_threshold = DEFAULT_INTEREST_THRESHOLD;
-	      procavs[uuslot].num_intrests = 0;
-	      procavs[uuslot].mintrests = 0;
-	      procavs[uuslot].pintrests = 0;
-	      procavs[uuslot].dwarned = 0;
-	      procavs[uuslot].dalarmed = 0;
-	      procavs[uuslot].mwarned = 0;
-	      procavs[uuslot].malarmed = 0;
-	      procavs[uuslot].swarned = 0;
-	      procavs[uuslot].salarmed = 0;
+	      initialize_slot(&procavs[uuslot], &procsnap[i], an_time._t.tv_sec);
 	    }
 	  else   /* This means we found the history, now we begin the analysis */
 	    {  
@@ -193,7 +198,7 @@ void* analyzer_thread(void *a)
 		}
 	      if (procavs[foundhistory].mov_percent >= 5) 
 		{
-		  modify_interest(procavs[foundhistory],"proc",5);
+		  modify_interest(&procavs[foundhistory],"proc",5);
 		  procavs[foundhistory].pintrests++;
 		  procavs[foundhistory].mov_percent = 0;
 		}
@@ -202,18 +207,18 @@ void* analyzer_thread(void *a)
 	      procavs[foundhistory].last_size = procsnap[i]._size;
 
 	      if (procavs[foundhistory].avg_size_gain > 0)
-		modify_interest(procavs[foundhistory], "mem", 1);
+		modify_interest(&procavs[foundhistory], "mem", 1);
 
 	      if (procavs[foundhistory].avg_size_gain < 0)
-		modify_interest(procavs[foundhistory],"mem",-1);
+		modify_interest(&procavs[foundhistory],"mem",-1);
 
 	      procavs[foundhistory].avg_rssize_gain = procsnap[i]._rssize - procavs[foundhistory].last_rssize;
 	      procavs[foundhistory].last_rssize = procsnap[i]._rssize;
 	      if (procavs[foundhistory].avg_rssize_gain > 0)
-		modify_interest(procavs[foundhistory],"rss",1);
+		modify_interest(&procavs[foundhistory],"rss",1);
 
 	      if (procavs[foundhistory].avg_rssize_gain < 0)
-		modify_interest(procavs[foundhistory],"rss",-1);
+		modify_interest(&procavs[foundhistory],"rss",-1);
 
 	      //some interest calculations related to state changing
 	      if (procavs[foundhistory].intrest_score > procavs[foundhistory].interest_threshold)
