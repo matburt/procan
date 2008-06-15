@@ -1,4 +1,4 @@
-/* Copyright (c) 2007, Matthew W. Jones
+/* Copyright (c) 2008, Matthew W. Jones
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without 
@@ -36,14 +36,15 @@
  */
 procan_config* get_config()
 {
-  FILE *cfile;
-  char *cfiles[8] = {"/etc/procan.conf", "/etc/procan/procan.conf",
+  FILE *cfile = NULL;
+  char *cfiles[] = {"/etc/procan.conf", "/etc/procan/procan.conf",
 		     "/usr/etc/procan.conf","/usr/etc/procan/procan.conf",
 		     "/usr/local/etc/procan.conf","~/.procan.conf"
-		     "/usr/local/etc/procan/procan.conf", "./procan.conf"};
-  int index_ = 0;
-  while (((cfile = fopen(cfiles[index_], "r")) == NULL) && (index_ < 8))
-    index_++;
+		     "/usr/local/etc/procan/procan.conf", "./procan.conf",NULL};
+  int i = 0;
+  while ((cfiles[i] != NULL) && 
+	 ((cfile = fopen(cfiles[i], "r")) == NULL))
+    i++;
   
   if (!cfile)
     {
@@ -76,7 +77,7 @@ procan_config* get_config()
 	    }
 	  char *toks = malloc(20*sizeof(char));
 	  char *brk;
-	  int i;
+	  i = 0;
 	  if (strcmp(fptr,"excludeuids") == 0)
 	    {
 	      i = 0;
