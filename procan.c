@@ -134,10 +134,6 @@ int get_statistics(int *mis, int *uis, int *numints)
 	    }
 	}
     }
-  for (i = 0; i < numprocavs; i++)
-    {
-      printf("%i\n",mis[i]);
-    }
   return numids;
 }
 

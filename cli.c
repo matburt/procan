@@ -116,7 +116,7 @@ int interactive_mode()
           mvwaddstr(user_win, 1, 1, "Active Users:");
           mvwaddstr(proc_win, 2, 1, "command | lpid | cpu |  rssz  | cpugn | szgn | rsszgn | I | #I");
 
-          int *mis = (int *)calloc(numprocavs, sizeof(int));
+          int *mis = (int *)malloc(numprocavs*sizeof(int));
           int *uis = (int *)malloc(numprocavs*sizeof(int));
           int *numints = (int *)malloc(numprocavs*sizeof(int));
 
@@ -157,7 +157,7 @@ int interactive_mode()
           wrefresh(user_win); 
           
           pthread_mutex_unlock(&procchart_mutex);
-          refreshcounter = 800;
+          refreshcounter = 100;
         }
       refreshcounter--;
       usleep(20);

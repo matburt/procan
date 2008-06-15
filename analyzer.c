@@ -134,7 +134,7 @@ void* analyzer_thread(void *a)
 	      continue;
 	    }
 	  if (procavs == NULL)
-	    procavs = (proc_averages *) calloc(MAXPROCAVS, sizeof(proc_averages));
+	    procavs = (proc_averages *) malloc(MAXPROCAVS*sizeof(proc_averages));
 	  
 	  for (j = 0; j < numprocavs; j++) /* Search for matching history */
 	    {
@@ -150,12 +150,13 @@ void* analyzer_thread(void *a)
               if (uuslot == -1) //this usually means we are full, which really needs to be fixed.
                 continue;
 
+	      gettimeofday(&an_time._t, NULL);
+
 	      if (procavs[uuslot].command == NULL)   /* Create an entry for it */
-		procavs[uuslot].command = calloc(25, sizeof(char));
+		procavs[uuslot].command = malloc(25*sizeof(char));
 	      strncpy(procavs[uuslot].command, procsnap[i]._command, 25);
 	      procavs[uuslot].lastpid = procsnap[i]._pid;
 	      procavs[uuslot].uid = procsnap[i]._uid;
-	      gettimeofday(&an_time._t, NULL);
 	      procavs[uuslot].last_measure_time = an_time._t.tv_sec;
 	      procavs[uuslot].last_interest_time = an_time._t.tv_sec;
 	      procavs[uuslot].num_seen = 1;
