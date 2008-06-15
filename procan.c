@@ -139,12 +139,12 @@ int get_statistics(int *mis, int *uis, int *numints)
  */
 char* get_statistics_str()
 {
-  int *mis = (int *)calloc(numprocavs, sizeof(int));
-  int *uis = (int *)malloc(numprocavs*sizeof(int));
-  int *numints = (int *) malloc(numprocavs*sizeof(int));
+  int mis[numprocavs];
+  int uis[numprocavs];
+  int numints[numprocavs];
   int numids, holder, i, j;
-  char *nowstats = (char *)calloc(300, sizeof(char));
-  char *thenstats = (char *)malloc(50*sizeof(char));
+  char *nowstats = malloc(sizeof(nowstats) * 300);
+  char thenstats[50];
   numids = 0;
   for (i = 0; i < numprocavs; i++)
     {
@@ -226,13 +226,6 @@ char* get_statistics_str()
 	       numints[i]);
       nowstats = strncat(nowstats, (const char *)thenstats, 50);
       }
-#if defined (linux) //Wish I could do this on FreeBSD
-  if (thenstats != NULL)
-#endif
-  free(thenstats);
-  free(mis);
-  free(uis);
-  free(numints);
   return nowstats;
 }
 
