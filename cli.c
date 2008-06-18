@@ -55,6 +55,9 @@ int interactive_mode()
   char procline[100];
   int i,e, inp;
   int startx, starty, width, height;
+
+  int refreshcounter = 0;
+  struct timeval *now;
   
   /* The 3 signals we watch for, and ignore the return value of children */
   signal(SIGCHLD, SIG_IGN);
@@ -67,7 +70,11 @@ int interactive_mode()
   pthread_mutex_init(&hangup_mutex,NULL);
   pthread_mutex_init(&pconfig_mutex,NULL);
 
-  threads = (pthread_t *)malloc(2*sizeof(*threads));
+  if ((threads = (pthread_t *)malloc(2*sizeof(*threads))) == NULL)
+    {
+      printf("malloc error, can not allocate memory.\n");
+      exit(-1);
+    }
   
   if (( e = pthread_create(&threads[0], NULL, collector_thread, NULL)) != 0)
     printf("collector experienced a pthread error: %i\n",e);
@@ -98,10 +105,11 @@ int interactive_mode()
   nodelay(proc_win, TRUE);
   nodelay(user_win, TRUE);
 
-
-  int refreshcounter = 0;
-
-  struct timeval *now = (struct timeval *)malloc(sizeof(struct timeval));
+  if ((now = (struct timeval *)malloc(sizeof(struct timeval))) == NULL)
+    {
+      printf("malloc error, can not allocate memory.\n");
+      exit(-1);
+    }
 
   while ((inp = wgetch(proc_win)) != 113 && m_hangup != 1)
     {

@@ -66,7 +66,12 @@ void* collector_thread(void *a)
 	{
 	  if (procsnap[numprocsnap]._command == NULL)
 	    {
-	      procsnap[numprocsnap]._command = (char*)malloc(20*sizeof(char));
+	      if ((procsnap[numprocsnap]._command = (char*)malloc(20*sizeof(char))) == NULL)
+		{
+		  printf("malloc error, can not allocate memory.\n");
+		  exit(-1);
+		}
+
 	      if (procsnap[numprocsnap]._command == NULL)
 		{
 		  printf("Can not allocate memory.");

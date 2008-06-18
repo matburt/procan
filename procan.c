@@ -147,9 +147,16 @@ char* get_statistics_str()
   int uis[numprocavs];
   int numints[numprocavs];
   int numids, holder, i, j;
-  char *nowstats = malloc(sizeof(nowstats) * 300);
+  char *nowstats; 
   char thenstats[50];
+
+  if ((nowstats = malloc(sizeof(nowstats) * 300)) == NULL)
+    {
+      printf("malloc error, can not allocate memory.\n");
+      exit(-1);
+    }
   numids = 0;
+
   for (i = 0; i < numprocavs; i++)
     {
       mis[i] = i;
@@ -249,7 +256,11 @@ int pipe_mode()
   pthread_mutex_init(&hangup_mutex,NULL);
   pthread_mutex_init(&pconfig_mutex,NULL);
 
-  threads = (pthread_t *)malloc(2*sizeof(*threads));
+  if ((threads = (pthread_t *)malloc(2*sizeof(*threads))) == NULL)
+    {
+      printf("malloc error, can not allocate memory.\n");
+      exit(-1);
+    }
   
   if (( e = pthread_create(&threads[0], NULL, collector_thread, NULL)) != 0)
     printf("collector experienced a pthread error: %i\n",e);
@@ -398,7 +409,11 @@ int daemon_mode()
   pthread_mutex_init(&hangup_mutex,NULL);
   pthread_mutex_init(&pconfig_mutex,NULL);
 
-  threads = (pthread_t *)malloc(2*sizeof(*threads));
+  if ((threads = (pthread_t *)malloc(2*sizeof(*threads))) == NULL)
+    {
+      printf("malloc error, can not allocate memory.\n");
+      exit(-1);
+    }
   
   if (( e = pthread_create(&threads[0], NULL, collector_thread, NULL)) != 0)
     exit(0);

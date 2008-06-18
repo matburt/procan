@@ -103,13 +103,26 @@ void modify_interest(proc_averages *pav, char *type, int change)
   pav->intrest_score = pav->intrest_score + change;
   pav->mintrests++;
   if (scriptoutput)
-    script_output(type, pav->command, pav->lastpid, change, pav->intrest_score, pav->num_intrests);
+    {
+      script_output(type, 
+		    pav->command, 
+		    pav->lastpid, 
+		    change, 
+		    pav->intrest_score, 
+		    pav->num_intrests);
+    }
 }
 
 void initialize_slot(proc_averages *pav, proc_statistics *pc, long curtime)
 {
   if (pav->command == NULL)   /* Create an entry for it */
-    pav->command = malloc(25*sizeof(char));
+    {
+      if ((pav->command = malloc(25*sizeof(char))) == NULL)
+	{
+	  printf("malloc error, can not allocate memory.\n");
+	  exit(-1);
+	}
+    }
   strncpy(pav->command, pc->_command, 25);
   pav->lastpid = pc->_pid;
   pav->uid = pc->_uid;
@@ -166,7 +179,13 @@ void* analyzer_thread(void *a)
 	      continue;
 	    }
 	  if (procavs == NULL)
-	    procavs = (proc_averages *) malloc(MAXPROCAVS*sizeof(proc_averages));
+	    {
+	      if ((procavs = (proc_averages *) malloc(MAXPROCAVS*sizeof(proc_averages))) == NULL)
+		{
+		  printf("malloc error, can not allocate memory.\n");
+		  exit(-1);
+		}
+	    }
 	  
 	  for (j = 0; j < numprocavs; j++) /* Search for matching history */
 	    {
