@@ -48,7 +48,7 @@
 int syslog_backend(procan_config *pc, struct timeval *schedtime)
 {
   int i;
-  struct timeval *nowtime;
+  struct timeval nowtime;
 
   if (schedtime->tv_sec == 0)
     {
@@ -59,16 +59,11 @@ int syslog_backend(procan_config *pc, struct timeval *schedtime)
       return BACKEND_NORMAL;
     }
 
-  if ((nowtime = (struct timeval *)malloc(sizeof(struct timeval))) == NULL)
-    {
-      printf("malloc error, can not allocate memory.\n");
-      exit(-1);
-    }
-  gettimeofday(nowtime,NULL);
-  if (nowtime->tv_sec >= schedtime->tv_sec)
+  gettimeofday(&nowtime,NULL);
+  if (nowtime.tv_sec >= schedtime->tv_sec)
     {
       printf("Logging to syslog.\n");
-      schedtime->tv_sec = nowtime->tv_sec + ((pc->logfrequency * 60) * 60);
+      schedtime->tv_sec = nowtime.tv_sec + ((pc->logfrequency * 60) * 60);
       openlog("procan", LOG_CONS, LOG_DAEMON);
       char *info = get_statistics_str();
       syslog(LOG_NOTICE, "Interesting Processes: %s", info);
@@ -108,7 +103,6 @@ int syslog_backend(procan_config *pc, struct timeval *schedtime)
     closelog();
   pthread_mutex_unlock(&procchart_mutex);
   free(inds);
-  free(nowtime);
   return BACKEND_NORMAL;
 }
 
@@ -120,7 +114,7 @@ int mail_backend(procan_config *pc, struct timeval *schedtime)
 {
   int i;
   FILE *mailpipe=NULL;
-  struct timeval *nowtime;
+  struct timeval nowtime;
 
   if (schedtime->tv_sec == 0)
     {
@@ -130,59 +124,40 @@ int mail_backend(procan_config *pc, struct timeval *schedtime)
       schedtime->tv_sec = schedtime->tv_sec + ((pc->mailfrequency * 60) * 60);
       return BACKEND_NORMAL;
     }
-  if ((nowtime = (struct timeval *)malloc(sizeof(struct timeval))) == NULL)
+
+  gettimeofday(&nowtime, NULL);
+  if (nowtime.tv_sec >= schedtime->tv_sec)
     {
-      printf("malloc error, can not allocate memory.\n");
-      exit(-1);
-    }
-  gettimeofday(nowtime, NULL);
-  if (nowtime->tv_sec >= schedtime->tv_sec)
-    {
-      char *mta;
+      char mta[PATH_MAX];
 
       printf("Logging via mail.\n");
-      schedtime->tv_sec = nowtime->tv_sec + ((pc->mailfrequency * 60) * 60);
-      if ((mta = (char *)malloc(50*sizeof(char))) == NULL)
-	{
-	  printf("malloc error, can not allocate memory.\n");
-	  exit(-1);
-	}
-      snprintf(mta,50,"%s -t %s", pc->mtapath, pc->adminemail);
+      schedtime->tv_sec = nowtime.tv_sec + ((pc->mailfrequency * 60) * 60);
+      snprintf(mta,PATH_MAX,"%s -t %s", pc->mtapath, pc->adminemail);
+
       if ((mailpipe = popen(mta, "w")) == NULL)
 	{
 	  printf("Could not send mail with mail backend.\n");
-	  free(nowtime);
-	  free(mta);
 	  return BACKEND_ERROR;
 	}
       else
 	{
-	  char *uname;
-	  if ((uname = (char *)malloc(MAXLOGNAME*sizeof(char))) == NULL)
-	    {
-	      printf("malloc error, can not allocate memory.\n");
-	      exit(-1);
-	    }
+	  char uname[MAXLOGNAME];
+
 	  getlogin_r(uname, MAXLOGNAME);
 	  fprintf(mailpipe, "From: %s\n", uname);
 	  fprintf(mailpipe, "Subject: Procan Status Report\n");
 	  char *info = get_statistics_str();
 	  fprintf(mailpipe, "%s", info);
 	  pclose(mailpipe);
-	  free(uname);
 	  free(info);
 	}
       free(mta);
     }
 
   pthread_mutex_lock(&procchart_mutex);
-  char *mta;
-  if ((mta = (char *)malloc(50*sizeof(char))) == NULL)
-    {
-      printf("malloc error, can not allocate memory.\n");
-      exit(-1);
-    }
-  snprintf(mta,50,"%s -t %s", pc->mtapath, pc->adminemail);
+  char mta[PATH_MAX];
+
+  snprintf(mta,PATH_MAX,"%s -t %s", pc->mtapath, pc->adminemail);
   int *inds = (int *)calloc(numprocavs, sizeof(int));
   int n = get_warns(inds, pc, MAIL_BACKEND);
   if (n > 0)
@@ -190,8 +165,6 @@ int mail_backend(procan_config *pc, struct timeval *schedtime)
       if ((mailpipe = popen(mta,"w")) == NULL)
 	{
 	  printf("Could not send mail with mail backend.\n");
-	  free(nowtime);
-	  free(mta);
 	  free(inds);
 	  pthread_mutex_unlock(&procchart_mutex);
 	  return BACKEND_ERROR;
@@ -201,18 +174,13 @@ int mail_backend(procan_config *pc, struct timeval *schedtime)
     {
       if (!procavs[inds[i]].mwarned)
 	{
-	  char *uname;
-	  if ((uname = (char *)malloc(MAXLOGNAME*sizeof(char))) == NULL)
-	    {
-	      printf("malloc error, can not allocate memory.\n");
-	      exit(-1);
-	    }
+	  char uname[MAXLOGNAME];
+
 	  getlogin_r(uname, MAXLOGNAME);
 	  fprintf(mailpipe, "From: %s\n", uname);
 	  fprintf(mailpipe, "Subject: Procan Warning\n");
 	  fprintf(mailpipe, "%s has been warned by ProcAn (%d)", 
 		  procavs[inds[i]].command, procavs[inds[i]].intrest_score);
-	    free(uname);
 	  procavs[inds[i]].mwarned = 1;
 	}
     }
@@ -224,8 +192,6 @@ int mail_backend(procan_config *pc, struct timeval *schedtime)
       if ((mailpipe = popen(mta,"w")) == NULL)
 	{
 	  printf("Could not send mail with mail backend.\n");
-	  free(nowtime);
-	  free(mta);
 	  free(inds);
 	  pthread_mutex_unlock(&procchart_mutex);
 	  return BACKEND_ERROR;
@@ -235,19 +201,14 @@ int mail_backend(procan_config *pc, struct timeval *schedtime)
     {
       if (!procavs[inds[i]].malarmed)
 	{
-	  char *uname;
-	  if ((uname = (char *)malloc(MAXLOGNAME*sizeof(char))) == NULL)
-	    {
-	      printf("malloc error, can not allocate memory.\n");
-	      exit(-1);
-	    }
+	  char uname[MAXLOGNAME];
+
 	  getlogin_r(uname, MAXLOGNAME);
 	  fprintf(mailpipe, "From: %s\n", uname);
 	  fprintf(mailpipe, "To: %s\n", pc->adminemail);
 	  fprintf(mailpipe, "Subject: Procan Alarm\n");
 	  fprintf(mailpipe, "%s has triggered an alarm condition (%d)", 
 		  procavs[inds[i]].command, procavs[inds[i]].intrest_score);
-	  free(uname);
 	  procavs[inds[i]].malarmed = 1;
 	}
     }
@@ -256,8 +217,6 @@ int mail_backend(procan_config *pc, struct timeval *schedtime)
   pthread_mutex_unlock(&procchart_mutex);
 		     
   free(inds);
-  free(mta);
-  free(nowtime);
   return BACKEND_NORMAL;
 }
 
@@ -284,20 +243,15 @@ int script_backend(procan_config *pc)
 	{
 	  if (cp == 0)
 	    {
-	      char *sargs;
-	      if ((sargs = malloc(100*sizeof(char))) == NULL)
-		{
-		  printf("malloc error, can not allocate memory.\n");
-		  exit(-1);
-		}
+	      char sargs[100];
+
 	      snprintf(sargs, 100*sizeof(char), "%s %d %s %d %d",
 		       pc->warnscript,
 		       procavs[inds[i]].lastpid,
 		       procavs[inds[i]].command,
 		       procavs[inds[i]].intrest_score,
 		       procavs[inds[i]].num_intrests);
-		system(sargs);
-	      free(sargs);
+	      system(sargs);
 	      _exit(1);
 	    }
 	  else
@@ -330,12 +284,8 @@ int script_backend(procan_config *pc)
 	{
 	  if (cp == 0)
 	    {
-	      char *sargs;
-	      if ((sargs = malloc(100*sizeof(char))) == NULL)
-		{
-		  printf("malloc error, can not allocate memory.\n");
-		  exit(-1);
-		}
+	      char sargs[100];
+
 	      snprintf(sargs, 100*sizeof(char), "%s %d %s %d %d",
 		       pc->alarmscript,
 		       procavs[inds[i]].lastpid,
@@ -343,7 +293,6 @@ int script_backend(procan_config *pc)
 		       procavs[inds[i]].intrest_score,
 		       procavs[inds[i]].num_intrests);
 	      system(sargs);
-	      free(sargs);
 	      _exit(1);
 	    }
 	  else
