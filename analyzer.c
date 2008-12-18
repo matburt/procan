@@ -1,13 +1,13 @@
 /* Copyright (c) 2007, Matthew W. Jones
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without 
+ * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
- * * Redistribution of source code must retain the above copyright notice, 
+ *
+ * * Redistribution of source code must retain the above copyright notice,
  *   this list of conditions and the following disclaimer.
- * * Redistributions in binary form must reproduce the above copyright notice, 
- *   this list of conditions and the following disclaimer in the documentation 
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
  *   and/or other materials provided with the distribution.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -56,7 +56,7 @@ extern int scriptoutput;
 void script_output(char *type, char *cmd, int lastpid, int movement, int score, int niterests)
 {
   if (movement >= 0)
-    fprintf(stdout, "[%s,%s,%i,+%i,%i,%i]\n", type, 
+    fprintf(stdout, "[%s,%s,%i,+%i,%i,%i]\n", type,
 	    cmd,lastpid,movement,score,niterests);
   else
     fprintf(stdout, "[%s,%s,%i,%i,%i,%i]\n", type,
@@ -83,7 +83,7 @@ int get_unused_slot(struct timeval atimev)
           break;
         }
     }
-  
+
   //MAXPROCAVS should be more of an interval for growing
   //the numprocavs space instead of an upper limit.
   if (uuslot == -1 && numprocavs < MAXPROCAVS)
@@ -104,11 +104,11 @@ void modify_interest(proc_averages *pav, char *type, int change)
   pav->mintrests++;
   if (scriptoutput)
     {
-      script_output(type, 
-		    pav->command, 
-		    pav->lastpid, 
-		    change, 
-		    pav->intrest_score, 
+      script_output(type,
+		    pav->command,
+		    pav->lastpid,
+		    change,
+		    pav->intrest_score,
 		    pav->num_intrests);
     }
 }
@@ -118,10 +118,10 @@ void initialize_slot(proc_averages *pav, proc_statistics *pc, long curtime)
   if (pav->command == NULL)   /* Create an entry for it */
     {
       if ((pav->command = malloc(25*sizeof(char))) == NULL)
-	{
-	  printf("malloc error, can not allocate memory.\n");
-	  exit(-1);
-	}
+          {
+              printf("malloc error, can not allocate memory.\n");
+              exit(-1);
+          }
     }
   strncpy(pav->command, pc->_command, 25);
   pav->lastpid = pc->_pid;
@@ -172,7 +172,7 @@ void* analyzer_thread(void *a)
             continue;
 	  pthread_mutex_lock(&procchart_mutex);
 
-	  if (should_ignore_proc(procsnap[i]._command) 
+	  if (should_ignore_proc(procsnap[i]._command)
 	      || should_ignore_uid(procsnap[i]._uid))
 	    {
 	      pthread_mutex_unlock(&procchart_mutex);
@@ -186,7 +186,7 @@ void* analyzer_thread(void *a)
 		  exit(-1);
 		}
 	    }
-	  
+
 	  for (j = 0; j < numprocavs; j++) /* Search for matching history */
 	    {
 	      if (procsnap[i]._pid == procavs[j].lastpid)
@@ -206,7 +206,7 @@ void* analyzer_thread(void *a)
 	      initialize_slot(&procavs[uuslot], &procsnap[i], an_time._t.tv_sec);
 	    }
 	  else   /* This means we found the history, now we begin the analysis */
-	    {  
+	    {
 	      procavs[foundhistory].lastpid = procsnap[i]._pid;
 	      if (procsnap[i]._perc > 0 && procavs[foundhistory].last_percent > 0)
 		procavs[foundhistory].mov_percent++;
@@ -215,7 +215,7 @@ void* analyzer_thread(void *a)
 		  procavs[foundhistory].intrest_score = procavs[foundhistory].intrest_score - 5*procavs[foundhistory].mov_percent;
 		  procavs[foundhistory].mov_percent = 0;
 		}
-	      if (procavs[foundhistory].mov_percent >= 5) 
+	      if (procavs[foundhistory].mov_percent >= 5)
 		{
 		  modify_interest(&procavs[foundhistory],"proc",5);
 		  procavs[foundhistory].pintrests++;
@@ -264,7 +264,7 @@ void* analyzer_thread(void *a)
 	      procavs[foundhistory].times_measured = procavs[foundhistory].times_measured + 1;
 	      procavs[foundhistory].last_measure_time = an_time._t.tv_sec;
 	    }
-	  
+
 	  pthread_mutex_unlock(&procchart_mutex);
 	}
       pthread_mutex_unlock(&procsnap_mutex);

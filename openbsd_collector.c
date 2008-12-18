@@ -3,10 +3,10 @@
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  *
- * * Redistributions of source code must retain the above copyright notice, 
+ * * Redistributions of source code must retain the above copyright notice,
  *   this list of conditions and the following disclaimer.
- * * Redistributions in binary form must reproduce the above copyright notice, 
- *   this list of conditions and the following disclaimer in the documentation 
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
  *   and/or other materials provided with the distribution.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -42,16 +42,16 @@
 
 /* The collector thread is responsible
  * for collecting data about running processes
- * and placing them in a structure that 
+ * and placing them in a structure that
  * The analyzer thread can read quickly
  */
 void* collector_thread(void *a)
 {
   struct kinfo_proc2 *kprocaccess, *kpptr;
-  int mib[6] = {CTL_KERN, 
-	       KERN_PROC2, 
-	       KERN_PROC_UID, 
-	       (int)getuid(), 
+  int mib[6] = {CTL_KERN,
+	       KERN_PROC2,
+	       KERN_PROC_UID,
+	       (int)getuid(),
 	       sizeof(struct kinfo_proc2),
 	       0};
   int numprocs;
@@ -60,7 +60,7 @@ void* collector_thread(void *a)
   size_t psize;
 
   pthread_mutex_lock(&procsnap_mutex);
-  
+
   pthread_mutex_unlock(&procsnap_mutex);
   while (!hangup)    /* Thread run loop */
     {
@@ -68,55 +68,54 @@ void* collector_thread(void *a)
       /* We use the sysctl interface to gain access to the processes.
        * I have used code from OpenBSD top here */
       if ((sstat = sysctl(mib, 6, NULL, &psize,NULL,0)) == -1)
-	{
-	  fprintf(stderr, "Error in getprocs: fetching the size of the process tree.\n");
-	  exit(-1);
-	}
-      kprocaccess = (struct kinfo_proc2 *)calloc(MAXPROCAVS, 
-						 sizeof(struct kinfo_proc2));
+          {
+              fprintf(stderr, "Error in getprocs: fetching the size of the process tree.\n");
+              exit(-1);
+          }
+      kprocaccess = (struct kinfo_proc2 *)calloc(MAXPROCAVS,
+                                                 sizeof(struct kinfo_proc2));
       kpptr = kprocaccess;
       psize = 5 * psize / 4;
       mib[5] = (int)(psize / sizeof(struct kinfo_proc2));
       if ((sstat = sysctl(mib, 6, kprocaccess, &psize, NULL, 0)) == -1)
-	{
-	  fprintf(stderr, "Error in getprocs: failed to fetch the actual process tree.\n");
-	  exit(-2);
-	}
-      numprocs = (int)(psize / sizeof(struct kinfo_proc2));      
+          {
+              fprintf(stderr, "Error in getprocs: failed to fetch the actual process tree.\n");
+              exit(-2);
+          }
+      numprocs = (int)(psize / sizeof(struct kinfo_proc2));
       if (procsnap == NULL)
-	{
-	  procsnap = (proc_statistics *) calloc(MAXPROCAVS, sizeof(proc_statistics));
-	  if (procsnap == NULL)
-	    {
-	      printf("Can not allocate memory.");
-	      exit(-1);
-	    }
-	}
+          {
+              procsnap = (proc_statistics *) calloc(MAXPROCAVS, sizeof(proc_statistics));
+              if (procsnap == NULL)
+                  {
+                      printf("Can not allocate memory.");
+                      exit(-1);
+                  }
+          }
       numprocsnap = numprocs;
       for (i = 0; i < numprocs; i++)
-	{ /* For each running process we do this and drop it into the array. */
-	  procsnap[i]._pid = kpptr->p_pid;
-	  procsnap[i]._pid = kpptr->p_uid;
-	  if (procsnap[i]._command == NULL)
-	    procsnap[i]._command = calloc(KI_MAXCOMLEN + 1,sizeof(char));
-	  strlcpy(procsnap[i]._command, kpptr->p_comm, KI_MAXCOMLEN);
-	  procsnap[i]._rssize = kpptr->p_vm_rssize;
-	  procsnap[i]._size = kpptr->p_uru_ixrss;
-	  procsnap[i]._perc = kpptr->p_pctcpu;
-	  procsnap[i]._age = kpptr->p_ustart_sec;
-	  procsnap[i]._read = 0;
-	  kpptr++;
-	}
+          { /* For each running process we do this and drop it into the array. */
+              procsnap[i]._pid = kpptr->p_pid;
+              procsnap[i]._uid = kpptr->p_uid;
+              if (procsnap[i]._command == NULL)
+                  procsnap[i]._command = malloc(KI_MAXCOMLEN + 1 * sizeof(char));
+              strlcpy(procsnap[i]._command, kpptr->p_comm, KI_MAXCOMLEN);
+              procsnap[i]._rssize = kpptr->p_vm_rssize;
+              procsnap[i]._size = kpptr->p_uru_ixrss;
+              procsnap[i]._perc = kpptr->p_pctcpu;
+              procsnap[i]._age = kpptr->p_ustart_sec;
+              procsnap[i]._read = 0;
+              kpptr++;
+          }
       if (kprocaccess != NULL)
-	free(kprocaccess);
+          free(kprocaccess);
       pthread_mutex_unlock(&procsnap_mutex);
       pthread_mutex_lock(&hangup_mutex);
       if(m_hangup)
-	hangup=1;
+          hangup=1;
       pthread_mutex_unlock(&hangup_mutex);
       if (!hangup)
-	sleep(1);
+          sleep(1);
     }
   return NULL;
 }
-

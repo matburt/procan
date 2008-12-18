@@ -1,13 +1,13 @@
 /* Copyright (c) 2007, Matthew W. Jones
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification, 
+ * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
  *
- * * Redistributions of source code must retain the above copyright notice, 
+ * * Redistributions of source code must retain the above copyright notice,
  *   this list of conditions and the following disclaimer.
- * * Redistributions in binary form must reproduce the above copyright notice, 
- *   this list of conditions and the following disclaimer in the documentation 
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
  *   and/or other materials provided with the distribution.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -58,7 +58,7 @@ int interactive_mode()
 
   int refreshcounter = 0;
   struct timeval *now;
-  
+
   /* The 3 signals we watch for, and ignore the return value of children */
   signal(SIGCHLD, SIG_IGN);
   signal(SIGHUP, handle_sig);
@@ -75,24 +75,24 @@ int interactive_mode()
       printf("malloc error, can not allocate memory.\n");
       exit(-1);
     }
-  
+
   if (( e = pthread_create(&threads[0], NULL, collector_thread, NULL)) != 0)
     printf("collector experienced a pthread error: %i\n",e);
   if (( e = pthread_create(&threads[1], NULL, analyzer_thread, NULL)) != 0)
     printf("analyzer experienced a pthread error: %i\n",e);
 
   /* Start Curses */
-  initscr();			
-  cbreak();			
+  initscr();
+  cbreak();
   keypad(stdscr, TRUE);
   noecho();
   refresh();
-  
+
   /* get the full screen's coordinate */
   getmaxyx(stdscr, height, width);
   startx = 0;
   starty = 0;
-  
+
   /* Create and set up the windows */
   proc_win = newwin(height-6, width, starty, startx);
   user_win = newwin(6, width, starty+(height-6), startx);
@@ -117,10 +117,10 @@ int interactive_mode()
         {
           gettimeofday(now,NULL);
           pthread_mutex_lock(&procchart_mutex);
-          
+
           wclear(proc_win);
           wclear(user_win);
-          mvwaddstr(proc_win, 1, 1, "Active Processes:");          
+          mvwaddstr(proc_win, 1, 1, "Active Processes:");
           mvwaddstr(user_win, 1, 1, "Active Users:");
           mvwaddstr(proc_win, 2, 1, "command | lpid | cpu |  rssz  | cpugn | szgn | rsszgn | I | #I");
 
@@ -134,7 +134,7 @@ int interactive_mode()
             {
               if (procavs[mis[i]].last_measure_time > now->tv_sec - 30)
                 {
-                  snprintf(procline, 100, "%8.8s %6i %5i %6i %6i %6i %8i %3i %3i", 
+                  snprintf(procline, 100, "%8.8s %6i %5i %6i %6i %6i %8i %3i %3i",
                            procavs[mis[i]].command,
                            procavs[mis[i]].lastpid,
                            procavs[mis[i]].last_percent,
@@ -157,21 +157,22 @@ int interactive_mode()
 
           box(proc_win, 0, 0);
           box(user_win, 0, 0);
-          wrefresh(proc_win); 
-          wrefresh(user_win); 
-          
+          wnoutrefresh(proc_win);
+          wnoutrefresh(user_win);
+          doupdate();
+
           pthread_mutex_unlock(&procchart_mutex);
-          refreshcounter = 200;
+          refreshcounter = 2000;
         }
       refreshcounter--;
-      usleep(20);
+      usleep(200);
     }
 
   endwin();
   pthread_mutex_lock(&hangup_mutex);
   m_hangup=1;
   pthread_mutex_unlock(&hangup_mutex);
-  
+
   pthread_join(threads[0],NULL);
   pthread_join(threads[1],NULL);
   pthread_mutex_destroy(&hangup_mutex);
@@ -186,14 +187,14 @@ int interactive_mode()
       if (procsnap[i]._command != NULL)
 	free(procsnap[i]._command);
     }
-#endif 
+#endif
   free(procsnap);
   for (i = 0; i < numprocavs; i++)
     {
       if (procavs[i].command != NULL)
-	free(procavs[i].command);
+          free(procavs[i].command);
     }
   free(procavs);
-  
+
   return 0;
 }
