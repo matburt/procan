@@ -57,7 +57,6 @@ int interactive_mode()
   int startx, starty, width, height;
 
   int refreshcounter = 0;
-  struct timeval *now;
 
   /* The 3 signals we watch for, and ignore the return value of children */
   signal(SIGCHLD, SIG_IGN);
@@ -105,21 +104,12 @@ int interactive_mode()
   nodelay(proc_win, TRUE);
   nodelay(user_win, TRUE);
 
-  if ((now = (struct timeval *)malloc(sizeof(struct timeval))) == NULL)
-    {
-      printf("malloc error, can not allocate memory.\n");
-      exit(-1);
-    }
-
   while ((inp = wgetch(proc_win)) != 113 && m_hangup != 1)
     {
       if (refreshcounter == 0)
         {
-          gettimeofday(now,NULL);
           pthread_mutex_lock(&procchart_mutex);
 
-          wclear(proc_win);
-          wclear(user_win);
           mvwaddstr(proc_win, 1, 1, "Active Processes:");
           mvwaddstr(user_win, 1, 1, "Active Users:");
           mvwaddstr(proc_win, 2, 1, "command | lpid | cpu |  rssz  | cpugn | szgn | rsszgn | I | #I");
@@ -132,21 +122,17 @@ int interactive_mode()
 
           for (i = 0; i < numprocavs; i++)
             {
-              if (procavs[mis[i]].last_measure_time > now->tv_sec - 30)
-                {
-                  snprintf(procline, 100, "%8.8s %6i %5i %6i %6i %6i %8i %3i %3i",
-                           procavs[mis[i]].command,
-                           procavs[mis[i]].lastpid,
-                           procavs[mis[i]].last_percent,
-                           procavs[mis[i]].last_rssize,
-                           procavs[mis[i]].mov_percent,
-                           procavs[mis[i]].avg_size_gain,
-                           procavs[mis[i]].avg_rssize_gain,
-                           procavs[mis[i]].intrest_score,
-                           procavs[mis[i]].num_intrests);
-                  mvwaddstr(proc_win, (i+3), 1, procline);
-                }
-
+                snprintf(procline, 100, "%8.8s %6i %5i %6i %6i %6i %8i %3i %3i",
+                         procavs[mis[i]].command,
+                         procavs[mis[i]].lastpid,
+                         procavs[mis[i]].last_percent,
+                         procavs[mis[i]].last_rssize,
+                         procavs[mis[i]].mov_percent,
+                         procavs[mis[i]].avg_size_gain,
+                         procavs[mis[i]].avg_rssize_gain,
+                         procavs[mis[i]].intrest_score,
+                         procavs[mis[i]].num_intrests);
+                mvwaddstr(proc_win, (i+3), 1, procline);
             }
 
           for (i = 0; i < numids; i++)
