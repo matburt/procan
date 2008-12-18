@@ -4,12 +4,16 @@ ProcAn: An Adaptive Process Analysis tool for FreeBSD, OpenBSD, and Linux.
 
 Build instructions:
 There are no external dependencies for FreeBSD and OpenBSD save the standard C libraries.
-On Linux you will need libproc's header files, these can usually be found as a package
-for your distro, sometimes it is grouped in with procps-dev.
-To build, no matter what platform type: gmake
+Linux requires libproc and a version of header files needed to build are included in this
+source distribution.
+To build on Linux: make
+To build on FreeBSD and OpenBSD: gmake (after installing GNU Make)
 
 
 Usage instructions:
+Procan ships with an example configuration file and will complain if a configuration
+file is not present.  This example file can be used by copying it to: procan.conf
+
 Running procan with no options will print out some very brief usage information,
 but here I'll provide more detail.
 Currently there are three primary modes: interactive mode (-i), daemon mode 
