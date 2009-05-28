@@ -115,14 +115,14 @@ void modify_interest(proc_averages *pav, char *type, int change)
 
 void initialize_slot(proc_averages *pav, proc_statistics *pc, long curtime)
 {
-  if (pav->command == NULL)   /* Create an entry for it */
-    {
+  //  if (pav->command == NULL)   /* Create an entry for it */
+  //  {
       if ((pav->command = malloc(25*sizeof(char))) == NULL)
           {
               printf("malloc error, can not allocate memory.\n");
               exit(-1);
           }
-    }
+      //  }
   strncpy(pav->command, pc->_command, 25);
   pav->lastpid = pc->_pid;
   pav->uid = pc->_uid;

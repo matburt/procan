@@ -5,6 +5,7 @@
 
 #ifndef PROCAN_H
 #define PROCAN_H
+#include <sys/time.h>
 
 #define MAXPROCAVS 500                /* Maximum unique procs to analyze */
 #define DEFAULT_INTEREST_THRESHOLD 5  /* Default Threshold for Interesting procs */
