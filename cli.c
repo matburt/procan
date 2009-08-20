@@ -112,7 +112,7 @@ int interactive_mode()
 
           mvwaddstr(proc_win, 1, 1, "Active Processes:");
           mvwaddstr(user_win, 1, 1, "Active Users:");
-          mvwaddstr(proc_win, 2, 1, "command | lpid | cpu |  rssz  | cpugn | szgn | rsszgn | I | #I");
+          mvwaddstr(proc_win, 2, 1, "command | lpid | cpu |  rssz | cpugn | szgn | rsszgn | I | #I");
 
           int mis[numprocavs];
           int uis[numprocavs];
@@ -122,7 +122,7 @@ int interactive_mode()
 
           for (i = 0; i < numprocavs; i++)
             {
-                snprintf(procline, 100, "%8.8s %6i %5i %6i %6i %6i %8i %3i %3i",
+                snprintf(procline, 100, "%8.8s %6i %5i %7i %7i %6i %8i %3i %3i",
                          procavs[mis[i]].command,
                          procavs[mis[i]].lastpid,
                          procavs[mis[i]].last_percent,
