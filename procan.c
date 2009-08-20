@@ -1,13 +1,13 @@
 /* Copyright (c) 2007, Matthew W. Jones
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without 
+ * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- * * Redistributions of source code must retain the above copyright notice, 
+ * * Redistributions of source code must retain the above copyright notice,
  *   this list of conditions and the following disclaimer.
- * * Redistributions in binary form must reproduce the above copyright notice, 
- *   this list of conditions and the following disclaimer in the documentation 
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
  *   and/or other materials provided with the distribution.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -83,62 +83,59 @@ int get_statistics(int *mis, int *uis, int *numints)
   for (i = 0; i < numprocavs; i++)
     {
       mis[i] = i;
-      int found=0;
+      int found = 0;
       for (j = 0; j < numids; j++)
-	{
-	  if (uis[j] == procavs[i].uid)
-	    {
-	      numints[j]+=procavs[i].num_intrests;
-	      found = 1;
-	      break;
-	    }
-	} 
+          {
+              if (uis[j] == procavs[i].uid)
+                  {
+                      numints[j]+=procavs[i].num_intrests;
+                      found = 1;
+                      break;
+                  }
+          }
 
       if (!found)
-	{
-	  uis[numids] = procavs[i].uid;
-	  numints[numids] = procavs[i].num_intrests;
-	  numids++;
-	}
+          {
+              uis[numids] = procavs[i].uid;
+              numints[numids] = procavs[i].num_intrests;
+              numids++;
+          }
     }
 
   for (i = 0; i < numids; i++)
-    {
-      for (j = 0; j < numids; j++)
-	{
-	  if (numints[j] > numints[j-1])
-	    {
-	      holder = numints[j];
-	      numints[j] = numints[j-1];
-	      numints[j-1] = holder;
-	      holder = uis[j];
-	      uis[j] = uis[j-1];
-	      uis[j-1] = holder;
-	    }
-	}
-    }
-  
+      {
+          for (j = 0; j < numids; j++)
+              {
+                  if (numints[j] > numints[j-1])
+                      {
+                          holder = numints[j];
+                          numints[j] = numints[j-1];
+                          numints[j-1] = holder;
+                          holder = uis[j];
+                          uis[j] = uis[j-1];
+                          uis[j-1] = holder;
+                      }
+              }
+      }
+
   for (i = 1; i < numprocavs; i++)
-    {
-      for (j = 1; j < numprocavs; j++)
-	{
-	  if ((procavs[mis[j]].intrest_score > procavs[mis[j-1]].intrest_score ||
-	       procavs[mis[j]].num_intrests > procavs[mis[j-1]].num_intrests) ||
-	      (procavs[mis[j]].last_rssize > procavs[mis[j-1]].last_rssize ||
-	       procavs[mis[j]].last_size > procavs[mis[j-1]].last_size ||
-	       procavs[mis[j]].last_percent > procavs[mis[j-1]].last_percent))
-	    {
-	      holder = mis[j];
-	      mis[j] = mis[j-1];
-	      mis[j-1] = holder;
-	    }
-	}
-    }
+      {
+          for (j = 1; j < numprocavs; j++)
+              {
+                  if (procavs[mis[j]].intrest_score >
+                      procavs[mis[j-1]].intrest_score)
+                      {
+                          holder = mis[j];
+                          mis[j] = mis[j-1];
+                          mis[j-1] = holder;
+                      }
+              }
+      }
   return numids;
 }
 
 /* Fetches a long string with the top 5 processes and why they are the top 5
- * Will also display the top 5 most interesting users. 
+ * Will also display the top 5 most interesting users.
  * Calling function must free
  */
 char* get_statistics_str()
@@ -147,7 +144,7 @@ char* get_statistics_str()
   int uis[numprocavs];
   int numints[numprocavs];
   int numids, holder, i, j;
-  char *nowstats; 
+  char *nowstats;
   char thenstats[50];
 
   if ((nowstats = malloc(sizeof(nowstats) * 300)) == NULL)
@@ -169,7 +166,7 @@ char* get_statistics_str()
 	      found = 1;
 	      break;
 	    }
-	} 
+	}
 
       if (!found)
 	{
@@ -189,12 +186,12 @@ char* get_statistics_str()
 	      numints[j] = holder;
 	      holder = uis[j-1];
 	      uis[j-1] = uis[j];
-	      uis[j] = holder;		
+	      uis[j] = holder;
 	    }
 	}
-      
+
     }
-  
+
   for (i = (numprocavs-1); i >= 0; i--)
     {
       for (j = 1; j <= i; j++)
@@ -207,7 +204,7 @@ char* get_statistics_str()
 	    }
 	}
     }
-  
+
   int place = 0;
   for (i = numprocavs-1; i >= numprocavs-5; i--)
     {
@@ -223,8 +220,8 @@ char* get_statistics_str()
 	       (procavs[mis[i]].salarmed || procavs[mis[i]].dalarmed || procavs[mis[i]].malarmed) ? "*ALARMED*" : "");
       nowstats = strncat(nowstats, (const char *)thenstats, 50);
     }
-  
-  nowstats = strncat(nowstats, "\nTop 5 users:\n", 14); 
+
+  nowstats = strncat(nowstats, "\nTop 5 users:\n", 14);
   place = 0;
   for (i = numids-1; i >= numids-5; i--)
     {
@@ -261,7 +258,7 @@ int pipe_mode()
       printf("malloc error, can not allocate memory.\n");
       exit(-1);
     }
-  
+
   if (( e = pthread_create(&threads[0], NULL, collector_thread, NULL)) != 0)
     printf("collector experienced a pthread error: %i\n",e);
   if (( e = pthread_create(&threads[1], NULL, analyzer_thread, NULL)) != 0)
@@ -276,7 +273,7 @@ int pipe_mode()
   pthread_mutex_lock(&hangup_mutex);
   m_hangup=1;
   pthread_mutex_unlock(&hangup_mutex);
-  
+
   pthread_join(threads[0],NULL);
   pthread_join(threads[1],NULL);
   pthread_mutex_destroy(&hangup_mutex);
@@ -290,7 +287,7 @@ int pipe_mode()
       if (procsnap[i]._command != NULL)
 	free(procsnap[i]._command);
     }
-#endif 
+#endif
   free(procsnap);
   for (i = 0; i < numprocavs; i++)
     {
@@ -383,7 +380,7 @@ int daemon_mode()
 {
   pthread_t *threads;
   int i,e;
-  
+
   if (setsid() < 0)
     {
       free_config(pc);
@@ -398,7 +395,7 @@ int daemon_mode()
   umask(027);
   chdir("/");
 
-  /* The 3 signals we watch for, and ignore the return value of children */  
+  /* The 3 signals we watch for, and ignore the return value of children */
   signal(SIGCHLD, SIG_IGN);
   signal(SIGHUP, handle_sig);
   signal(SIGTERM, handle_sig);
@@ -414,12 +411,12 @@ int daemon_mode()
       printf("malloc error, can not allocate memory.\n");
       exit(-1);
     }
-  
+
   if (( e = pthread_create(&threads[0], NULL, collector_thread, NULL)) != 0)
     exit(0);
   if (( e = pthread_create(&threads[1], NULL, analyzer_thread, NULL)) != 0)
     exit(0);
-  
+
   pthread_mutex_lock(&hangup_mutex);
   while (m_hangup != 1)
     {
@@ -531,7 +528,7 @@ int main(int argc, char *argv[])
 	  printf("\n");
 	}
     }
-  
+
   pc = get_config();
 
   if (intract == INTERACTIVE_MODE)
