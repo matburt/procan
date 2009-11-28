@@ -24,13 +24,12 @@ openbsd:
 	@gcc -O2 -Wall -o procan -lcurses -lpanel -lpthread procan.c analyzer.c openbsd_collector.c config.c backend.c cli.c
 linux:
 	@echo "Building the Linux make target."
-	@gcc -O2 -Wall -o procan -lcurses -lpanel -lpthread -lproc-3.2.7 procan.c analyzer.c linux_collector.c config.c backend.c cli.c
+	@gcc -O2 -Wall -o procan -lcurses -lpanel -lpthread -lproc-3.2.8 procan.c analyzer.c linux_collector.c config.c backend.c cli.c
 debug-linux:
 	@echo "Building the Linux debug target.";
-	@gcc -g -Wall -o procan -lcurses -lpanel -lpthread -lproc-3.2.7 procan.c analyzer.c linux_collector.c config.c backend.c cli.c
+	@gcc -g -Wall -o procan -lcurses -lpanel -lpthread -lproc-3.2.8 procan.c analyzer.c linux_collector.c config.c backend.c cli.c
 install:
 	@echo "I can't install myself just yet."
 	@echo "Install me yourself or just run from the local directory."
 clean:
 	@rm -f procan *~ *.core
-

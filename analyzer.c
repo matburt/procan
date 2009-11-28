@@ -151,6 +151,40 @@ void initialize_slot(proc_averages *pav, proc_statistics *pc, long curtime)
     pav->salarmed = 0;
 }
 
+int locate_history(int snapoffset)
+{
+    int j = 0;
+    int foundhistory = -1;
+    if (procsnap[snapoffset]._command == NULL )
+        return -2;
+    pthread_mutex_lock(&procchart_mutex);
+
+    if (should_ignore_proc(procsnap[snapoffset]._command)
+        || should_ignore_uid(procsnap[snapoffset]._uid))
+        {
+            pthread_mutex_unlock(&procchart_mutex);
+            return -2;
+        }
+    if (procavs == NULL)
+        {
+            if ((procavs = (proc_averages *) malloc(MAXPROCAVS*sizeof(proc_averages))) == NULL)
+                {
+                    printf("locate_history(): malloc error, can not allocate memory.\n");
+                    exit(-1);
+                }
+        }
+
+    for (j = 0; j < numprocavs; j++) /* Search for matching history */
+        {
+            if (procsnap[snapoffset]._pid == procavs[j].lastpid)
+                {
+                    foundhistory = j;
+                    break;
+                }
+        }
+    return foundhistory;
+}
+
 /* Will analyze process data gathered by the collector
  * looking for 'interesting' processes and apply an adaptive threshold
  * to analyze the level of interest.
@@ -158,7 +192,7 @@ void initialize_slot(proc_averages *pav, proc_statistics *pc, long curtime)
 void* analyzer_thread(void *a)
 {
     int hangup=0;
-    int i,j= 0;
+    int i = 0;
     analyzer_times an_time;
 
     while (!hangup)  /* Thread Run Loop */
@@ -167,35 +201,10 @@ void* analyzer_thread(void *a)
             pthread_mutex_lock(&procsnap_mutex);
             for (i = 0; i < numprocsnap; i++)
                 {
-                    int foundhistory = -1;
-                    if (procsnap[i]._command == NULL )
+                    int foundhistory = locate_history(i);
+                    if (foundhistory == -2) /* Skip this element */
                         continue;
-                    pthread_mutex_lock(&procchart_mutex);
-
-                    if (should_ignore_proc(procsnap[i]._command)
-                        || should_ignore_uid(procsnap[i]._uid))
-                        {
-                            pthread_mutex_unlock(&procchart_mutex);
-                            continue;
-                        }
-                    if (procavs == NULL)
-                        {
-                            if ((procavs = (proc_averages *) malloc(MAXPROCAVS*sizeof(proc_averages))) == NULL)
-                                {
-                                    printf("malloc error, can not allocate memory.\n");
-                                    exit(-1);
-                                }
-                        }
-
-                    for (j = 0; j < numprocavs; j++) /* Search for matching history */
-                        {
-                            if (procsnap[i]._pid == procavs[j].lastpid)
-                                {
-                                    foundhistory = j;
-                                    break;
-                                }
-                        }
-                    if (foundhistory == -1) /* If it's not found, pick an unused slot */
+                    else if (foundhistory == -1) /* If it's not found, pick an unused slot */
                         {
                             int uuslot = get_unused_slot(an_time.atimev);
                             if (uuslot == -1) //this usually means we are full, which really needs to be fixed.
